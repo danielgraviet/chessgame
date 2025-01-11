@@ -6,6 +6,9 @@ package chess;
  * Note: You can add to this class, but you may not alter
  * signature of the existing methods.
  */
+import java.util.Arrays;
+import java.util.Objects;
+
 public class ChessBoard {
 
     private ChessPiece[][] board;
@@ -45,8 +48,8 @@ public class ChessBoard {
         // set black and white pawns
         // ISSUE HERE
         for (int column = 1; column <= 8; column++) {
-            board[2][column] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
-            board[7][column] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
+            addPiece(new ChessPosition(2, column), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN));
+            addPiece(new ChessPosition(7, column), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN));
         }
 
         // set rooks
@@ -74,5 +77,19 @@ public class ChessBoard {
         // set kings
         addPiece(new ChessPosition(8, 5), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING));
         addPiece(new ChessPosition(1, 5), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChessBoard that = (ChessBoard) o;
+        return Objects.deepEquals(board, that.board);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.deepHashCode(board);
     }
 }
