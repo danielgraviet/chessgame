@@ -55,10 +55,11 @@ public class ChessPiece {
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         if (pieceType == PieceType.BISHOP) {
-            /*required: ChessMove,  actual: ChessPosition*/
             return chess.MoveCalculations.CalculateBishopMoves.calculateMoves(board, myPosition);
         } else if (pieceType == PieceType.KING){
             return chess.MoveCalculations.CalculateKingMoves.calculateMoves(board, myPosition);
+        } else if (pieceType == PieceType.QUEEN) {
+            return chess.MoveCalculations.CalculateQueenMoves.calculateMoves(board, myPosition);
         } else {
             return null;
         }
