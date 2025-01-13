@@ -1,25 +1,46 @@
 package chess.MoveCalculations;
 
-import chess.ChessMove;
-import chess.ChessPosition;
-import chess.ChessBoard;
-
-import java.util.ArrayList;
+import chess.*;
 import java.util.Collection;
+import java.util.HashSet;
 
 public class CalculateBishopMoves {
 
     public static Collection<ChessMove> calculateMoves(ChessBoard board, ChessPosition position) {
-        ArrayList<ChessMove> moves = new ArrayList<>();
-        int currRow = position.getRow();
-        int currColumn = position.getColumn();
+        int currentRow = position.getRow();
+        int currentCol = position.getColumn();
 
-        for(int i = 1; i < 8; i++) {
-            int newRowPosition = currRow + 1;
-            int newColumnPosition = currColumn + 1;
-            ChessPosition newPosition = new ChessPosition(newRowPosition, newColumnPosition);
+        int[][] bishopMoves = {{1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
+        HashSet<ChessMove> moves = new HashSet<>();
 
-            moves.add(new ChessMove(position, newPosition, null));
+        for (int[] move : bishopMoves) {
+            int newRow = currentRow;
+            int newCol = currentCol;
+
+            while (true) {
+                newRow += move[0];
+                newCol += move[1];
+
+                ChessPosition newPosition = new ChessPosition(newRow, newCol);
+                // first check move is on the board.
+                if (!MoveHelp.isOnBoard(newPosition)) {
+                    break;
+                }
+
+                ChessPiece chessPieceAtNewPosition = board.getPiece(newPosition);
+                // test for case if piece is blocking the move.
+                if (chessPieceAtNewPosition != null){
+                    // checks if enemy team
+                    if (chessPieceAtNewPosition.getTeamColor() != board.getPiece(position).getTeamColor()) {
+                        // if enemy team, add it can capture that spot, then break.
+                        moves.add(new ChessMove(position, newPosition, null));
+                    }
+                    // if same team, cannot move past, do not add.
+                    break;
+                }
+                // if it is null(empty space), no issue, add to possible move
+                moves.add(new ChessMove(position, newPosition, null));
+            }
         }
         return moves;
     }

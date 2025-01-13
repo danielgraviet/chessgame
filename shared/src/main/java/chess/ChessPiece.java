@@ -57,6 +57,8 @@ public class ChessPiece {
         if (pieceType == PieceType.BISHOP) {
             /*required: ChessMove,  actual: ChessPosition*/
             return chess.MoveCalculations.CalculateBishopMoves.calculateMoves(board, myPosition);
+        } else if (pieceType == PieceType.KING){
+            return chess.MoveCalculations.CalculateKingMoves.calculateMoves(board, myPosition);
         } else {
             return null;
         }
