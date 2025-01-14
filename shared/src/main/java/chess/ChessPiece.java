@@ -60,6 +60,12 @@ public class ChessPiece {
             return chess.MoveCalculations.CalculateKingMoves.calculateMoves(board, myPosition);
         } else if (pieceType == PieceType.QUEEN) {
             return chess.MoveCalculations.CalculateQueenMoves.calculateMoves(board, myPosition);
+        } else if (pieceType == PieceType.ROOK) {
+            return chess.MoveCalculations.CalculateRookMoves.calculateMoves(board, myPosition);
+        } else if (pieceType == PieceType.KNIGHT) {
+            return chess.MoveCalculations.CalculateKnightMoves.calculateMoves(board, myPosition);
+        } else if (pieceType == PieceType.PAWN) {
+            return null;
         } else {
             return null;
         }

@@ -46,7 +46,6 @@ public class ChessBoard {
         board = new ChessPiece[8][8];
 
         // set black and white pawns
-        // ISSUE HERE
         for (int column = 1; column <= 8; column++) {
             addPiece(new ChessPosition(2, column), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN));
             addPiece(new ChessPosition(7, column), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN));

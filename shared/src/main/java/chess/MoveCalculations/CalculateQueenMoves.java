@@ -30,13 +30,14 @@ public class CalculateQueenMoves {
                 }
 
                 ChessPiece chessPieceAtNewPosition = board.getPiece(newPosition);
+
+                // replace this with function call to move help.
                 if (chessPieceAtNewPosition != null){
                     if (chessPieceAtNewPosition.getTeamColor() != board.getPiece(position).getTeamColor()){
                         moves.add(new ChessMove(position, newPosition, null));
                     }
                     break;
                 }
-
                 moves.add(new ChessMove(position, newPosition, null));
             }
 
