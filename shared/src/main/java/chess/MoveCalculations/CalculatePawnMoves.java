@@ -25,6 +25,20 @@ public class CalculatePawnMoves {
         int direction = (teamColor == ChessGame.TeamColor.WHITE) ? 1 : -1;
         int startingRow = (teamColor == ChessGame.TeamColor.WHITE ? 2 : 7);
 
+        // add the starting moves.
+            // things to check for.
+            // - move piece up 1, or down 1, according to color, and if there is no piece blocking it.
+            // - if 1st move is successful, move again according to color, and if there is no piece blocking it.
+
+        // add the attack moves
+            // things to check for
+            // - in addition to the starting moves, check if an enemy piece is diagonal
+                // white: (+1, +1), (+1, -1)
+                // black: (-1, -1), (-1, +1)
+            // - if it is, add those positions to the hashset.
+
+
+        // finally return the full array.
         return moves;
     }
 }
