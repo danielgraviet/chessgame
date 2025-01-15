@@ -65,7 +65,7 @@ public class ChessPiece {
         } else if (pieceType == PieceType.KNIGHT) {
             return chess.MoveCalculations.CalculateKnightMoves.calculateMoves(board, myPosition);
         } else if (pieceType == PieceType.PAWN) {
-            return null;
+            return chess.MoveCalculations.CalculatePawnMoves.calculateMoves(board, myPosition);
         } else {
             return null;
         }
