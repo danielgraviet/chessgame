@@ -1,13 +1,12 @@
 package chess.MoveCalculations;
 import chess.*;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
 
 public class CalculateRookMoves {
-    public static Collection<ChessMove> calculateMoves(ChessBoard board, ChessPosition position) {
+    public static Collection<ChessMove> getMoves(ChessBoard board, ChessPosition position) {
         HashSet<ChessMove> moves = new HashSet<>();
         int currentRow = position.getRow();
         int currentColumn = position.getColumn();
@@ -24,7 +23,7 @@ public class CalculateRookMoves {
 
                 ChessPosition newPosition = new ChessPosition(newRow, newColumn);
 
-                if(!MoveHelp.isOnBoard(newPosition)){
+                if(PieceMoveCalculator.isOnBoard(newPosition)){
                     break;
                 }
 

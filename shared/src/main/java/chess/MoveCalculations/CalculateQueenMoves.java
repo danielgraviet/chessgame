@@ -8,8 +8,8 @@ import chess.ChessPosition;
 import java.util.Collection;
 import java.util.HashSet;
 
-public class CalculateQueenMoves {
-    public static Collection<ChessMove> calculateMoves(ChessBoard board, ChessPosition position){
+public class CalculateQueenMoves implements PieceMoveCalculator {
+    public static Collection<ChessMove> getMoves(ChessBoard board, ChessPosition position){
         int currentRow = position.getRow();
         int currentCol = position.getColumn();
 
@@ -25,7 +25,7 @@ public class CalculateQueenMoves {
 
                 ChessPosition newPosition = new ChessPosition(newRow, newCol);
 
-                if (!MoveHelp.isOnBoard(newPosition)){
+                if (PieceMoveCalculator.isOnBoard(newPosition)){
                     break;
                 }
 

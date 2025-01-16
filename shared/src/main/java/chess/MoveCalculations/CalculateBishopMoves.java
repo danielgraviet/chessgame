@@ -4,9 +4,9 @@ import chess.*;
 import java.util.Collection;
 import java.util.HashSet;
 
-public class CalculateBishopMoves {
+public class CalculateBishopMoves implements PieceMoveCalculator {
 
-    public static Collection<ChessMove> calculateMoves(ChessBoard board, ChessPosition position) {
+    public static Collection<ChessMove> getMoves(ChessBoard board, ChessPosition position) {
         int currentRow = position.getRow();
         int currentCol = position.getColumn();
 
@@ -23,7 +23,7 @@ public class CalculateBishopMoves {
 
                 ChessPosition newPosition = new ChessPosition(newRow, newCol);
                 // first check move is on the board.
-                if (!MoveHelp.isOnBoard(newPosition)) {
+                if (PieceMoveCalculator.isOnBoard(newPosition)) {
                     break;
                 }
 
