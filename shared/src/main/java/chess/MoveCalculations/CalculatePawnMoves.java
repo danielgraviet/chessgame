@@ -31,17 +31,19 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
             // - if 1st move is successful, move again according to color, and if there is no piece blocking it.
         if (currentRow == startingRow) {
             moves.addAll(CalculatePawnMoves.startingMoves(board, position, direction));
+        } else {
+            moves.addAll(CalculatePawnMoves.regularMoves(board, position, direction));
         }
 
-        moves.addAll(CalculatePawnMoves.attackMoves(board, position, direction));
         // add the attack moves
-            // things to check for
-            // - in addition to the starting moves, check if an enemy piece is diagonal
-                // white: (+1, +1), (+1, -1)
-                // black: (-1, -1), (-1, +1)
-            // - if it is, add those positions to the hashset.
+        // things to check for
+        // - in addition to the starting moves, check if an enemy piece is diagonal
+        // white: (+1, +1), (+1, -1)
+        // black: (-1, -1), (-1, +1)
+        // - if it is, add those positions to the hashset.
 
-
+        moves.addAll(CalculatePawnMoves.attackMoves(board, position, direction));
+        // check for promotions
         // finally return the full array.
         return moves;
     }
@@ -79,6 +81,7 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
         ChessPiece currentPiece = board.getPiece(position);
         int[][] attackMoves = {{direction,1}, {direction,-1}};
         int[] regularMoves = {direction,0};
+        ChessGame.TeamColor teamColor = currentPiece.getTeamColor();
 
         if (currentPiece == null) {
             return moves;
@@ -93,23 +96,61 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
                 continue;
             }
             ChessPiece newPiece = board.getPiece(newPosition);
+
             if (newPiece != null && newPiece.getTeamColor() != currentPiece.getTeamColor()) {
+                if ((teamColor == ChessGame.TeamColor.WHITE && newRow == 8 || teamColor == ChessGame.TeamColor.BLACK && newRow == 1)) {
+                    for (ChessPiece.PieceType promotionPiece : ChessPiece.PieceType.values()) {
+                        if (promotionPiece != ChessPiece.PieceType.PAWN && promotionPiece != ChessPiece.PieceType.KING) {
+                            moves.add(new ChessMove(position, newPosition, promotionPiece));
+                        }
+                    }
+                } else {
+                    moves.add(new ChessMove(position, newPosition, null));
+                }
+            }
+        }
+        return moves;
+    }
+
+    public static Collection<ChessMove> regularMoves(ChessBoard board, ChessPosition position, int direction) {
+        HashSet<ChessMove> moves = new HashSet<>();
+        int currentRow = position.getRow();
+        int currentColumn = position.getColumn();
+        ChessPiece currentPiece = board.getPiece(position);
+        ChessGame.TeamColor teamColor = currentPiece.getTeamColor();
+
+        // move forward one spot
+        int newRow = currentRow + direction;
+        ChessPiece newPiece = board.getPiece(new ChessPosition(newRow, currentColumn));
+        ChessPosition newPosition = new ChessPosition(newRow, currentColumn);
+
+        if (!PieceMoveCalculator.isOnBoard(newPosition)){
+            return moves;
+        }
+
+        // check if ANY piece is there
+        if (newPiece != null) {
+            // if ANY piece is there
+            // stop
+            return moves;
+            // if piece is NOT there
+        } else {
+            if (newRow == 8 && teamColor == ChessGame.TeamColor.WHITE || newRow == 1 && teamColor == ChessGame.TeamColor.BLACK) {
+                for (ChessPiece.PieceType promotionPiece : ChessPiece.PieceType.values()) {
+                    if (promotionPiece != ChessPiece.PieceType.PAWN && promotionPiece != ChessPiece.PieceType.KING) {
+                        moves.add(new ChessMove(position, newPosition, promotionPiece));
+                    }
+                }
+            } else {
                 moves.add(new ChessMove(position, newPosition, null));
             }
         }
+        // advance one spot
+        // check if on the board
+        // if on the board, check if it is promotion row
+        // if promotion row, add the correct pieces.
 
-        for (int move : regularMoves) {
-            int newRow = currentRow + move;
-            ChessPosition newPosition = new ChessPosition(newRow, currentColumn);
 
-            if (!PieceMoveCalculator.isOnBoard(newPosition)){
-                break;
-            }
-            ChessPiece newPiece = board.getPiece(newPosition);
-            if (newPiece == null){
-                moves.add(new ChessMove(position, newPosition, null));
-            }
-        }
         return moves;
     }
 }
