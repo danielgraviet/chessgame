@@ -25,7 +25,7 @@ public class CalculateQueenMoves implements PieceMoveCalculator {
 
                 ChessPosition newPosition = new ChessPosition(newRow, newCol);
 
-                if (PieceMoveCalculator.isOnBoard(newPosition)){
+                if (!PieceMoveCalculator.isOnBoard(newPosition)){
                     break;
                 }
 

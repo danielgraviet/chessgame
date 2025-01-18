@@ -23,7 +23,7 @@ public class CalculateBishopMoves implements PieceMoveCalculator {
 
                 ChessPosition newPosition = new ChessPosition(newRow, newCol);
                 // first check move is on the board.
-                if (PieceMoveCalculator.isOnBoard(newPosition)) {
+                if (!PieceMoveCalculator.isOnBoard(newPosition)) {
                     break;
                 }
 

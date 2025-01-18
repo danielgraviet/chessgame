@@ -23,7 +23,7 @@ public class CalculateKingMoves implements PieceMoveCalculator {
 
                 ChessPosition newPostition = new ChessPosition(newRow, newCol);
 
-                if (PieceMoveCalculator.isOnBoard(newPostition)){
+                if (!PieceMoveCalculator.isOnBoard(newPostition)){
                     break;
                 }
 
