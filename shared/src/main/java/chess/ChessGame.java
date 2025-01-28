@@ -1,9 +1,6 @@
 package chess;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * For a class that can manage a chess game, making moves on a board
@@ -82,41 +79,35 @@ public class ChessGame {
      */
     public boolean isInCheck(TeamColor teamColor) {
         ChessPosition kingPosition = null;
+        // compare enemy moves to king position at the end
+        List<ChessMove> enemyMoves = new ArrayList<>();
 
-        // first find the king.
+        // first find the king and enemy pieces
         for (int row = 1; row <= 8; row++) {
             for (int column = 1; column <= 8; column++) {
                 ChessPiece pieceAtNewPosition = board.getPiece(new ChessPosition(row, column));
+                // piece has been encountered
                 if (pieceAtNewPosition != null) {
+                    // found king
                     if (pieceAtNewPosition.getTeamColor() == teamColor && ChessPiece.PieceType.KING == pieceAtNewPosition.getPieceType()) {
                         kingPosition = new ChessPosition(row, column);
+
+                    // enemy piece has been encountered
+                    } else if (pieceAtNewPosition.getTeamColor() != teamColor) {
+                        ChessPiece enemyPiece = board.getPiece(new ChessPosition(row, column));
+                        ChessPosition enemyPosition = new ChessPosition(row, column);
+                        // add its moves.
+                        enemyMoves.addAll(enemyPiece.pieceMoves(board, enemyPosition));
                     }
                 }
             }
         }
-
-        // find enemy piece and if they can attack the king.
-        for (int row = 1; row <= 8; row++) {
-            for (int column = 1; column <= 8; column++) {
-                ChessPiece enemyPiece = board.getPiece(new ChessPosition(row, column));
-
-                // enemy piece has been found.
-                if (enemyPiece != null && teamColor != enemyPiece.getTeamColor()){
-                    ChessPosition enemyPosition = new ChessPosition(row, column);
-                    // get the enemyPosition possible end moves.
-                    Collection<ChessMove> enemyMoves = enemyPiece.pieceMoves(board, enemyPosition);
-
-                    // see if the king position is one of them
-                    for (ChessMove move : enemyMoves){
-                        if (move.getEndPosition().equals(kingPosition)) {
-                            // if it is, return true
-                            return true;
-                        }
-                    }
-                }
+        for (ChessMove move : enemyMoves) {
+            if (move.getEndPosition().equals(kingPosition)) {
+                return true;
             }
         }
-        // return false if it never hits true.
+
         return false;
     }
 
