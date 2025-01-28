@@ -4,7 +4,6 @@ import chess.ChessBoard;
 import chess.ChessPosition;
 import chess.*;
 
-import java.awt.event.MouseEvent;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -12,7 +11,6 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
     public static Collection<ChessMove> getMoves(ChessBoard board, ChessPosition position) {
         HashSet<ChessMove> moves = new HashSet<>();
         int currentRow = position.getRow();
-        int currentColumn = position.getColumn();
         ChessPiece currentPiece = board.getPiece(position);
 
         // check early for invalid piece
@@ -25,26 +23,12 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
         int direction = (teamColor == ChessGame.TeamColor.WHITE) ? 1 : -1;
         int startingRow = (teamColor == ChessGame.TeamColor.WHITE ? 2 : 7);
 
-        // add the starting moves.
-            // things to check for.
-            // - move piece up 1, or down 1, according to color, and if there is no piece blocking it.
-            // - if 1st move is successful, move again according to color, and if there is no piece blocking it.
         if (currentRow == startingRow) {
             moves.addAll(CalculatePawnMoves.startingMoves(board, position, direction));
         } else {
             moves.addAll(CalculatePawnMoves.regularMoves(board, position, direction));
         }
-
-        // add the attack moves
-        // things to check for
-        // - in addition to the starting moves, check if an enemy piece is diagonal
-        // white: (+1, +1), (+1, -1)
-        // black: (-1, -1), (-1, +1)
-        // - if it is, add those positions to the hashset.
-
         moves.addAll(CalculatePawnMoves.attackMoves(board, position, direction));
-        // check for promotions
-        // finally return the full array.
         return moves;
     }
 
@@ -61,7 +45,7 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
             ChessPosition newPosition = new ChessPosition(newRow, newColumn);
             if (!PieceMoveCalculator.isOnBoard(newPosition)){
                 break;
-            };
+            }
             ChessPiece newPiece = board.getPiece(newPosition);
 
             if (newPiece != null) {
@@ -80,12 +64,7 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
         int currentColumn = position.getColumn();
         ChessPiece currentPiece = board.getPiece(position);
         int[][] attackMoves = {{direction,1}, {direction,-1}};
-        int[] regularMoves = {direction,0};
         ChessGame.TeamColor teamColor = currentPiece.getTeamColor();
-
-        if (currentPiece == null) {
-            return moves;
-        }
 
         for (int[] move: attackMoves) {
             int newRow = currentRow + move[0];
@@ -149,8 +128,6 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
         // check if on the board
         // if on the board, check if it is promotion row
         // if promotion row, add the correct pieces.
-
-
         return moves;
     }
 }
