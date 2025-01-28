@@ -43,6 +43,20 @@ public class ChessGame {
         BLACK
     }
 
+    public ChessPosition findKing(TeamColor teamColor) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition position = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(position);
+
+                if (piece != null && board.getPiece(position).getTeamColor() == teamColor && piece.getPieceType() == ChessPiece.PieceType.KING) {
+                    return position; // Found the king, return its position
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Gets a valid moves for a piece at the given location
      *
@@ -51,15 +65,38 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        // what do I need to know
-        // the current piece and where it can go, so that the king is not in check.
+        ChessPiece currentPiece = board.getPiece(startPosition);
 
-        // critical info
-        // position of king.
-        // if king is in check
+        if (currentPiece == null) {
+            return new HashSet<>();
+        }
+        // get all moves for the piece at the position
+        HashSet<ChessMove> possibleMoves = (HashSet<ChessMove>) currentPiece.pieceMoves(board, startPosition);
+
+        // hash set to store all the valid moves.
         HashSet<ChessMove> validMoves = new HashSet<>();
+
+        // loop through all possible moves
+        for (ChessMove move : possibleMoves) {
+            ChessPiece temporaryPiece = board.getPiece(move.getEndPosition());
+            // this places the piece at the new position to simulate a move.
+            board.addPiece(move.getEndPosition(), currentPiece);
+
+            // this removes the current piece from the old position on the board, to simulate a move
+            board.addPiece(startPosition, null);
+
+            // now that we have fully simulated a move, we need to check if our king is in check
+            if (!isInCheck(currentPiece.getTeamColor())) { // param is our team color.
+                validMoves.add(move);
+            }
+
+            // now we need to reset the board and do the next move.
+            board.addPiece(move.getEndPosition(), temporaryPiece);
+            board.addPiece(startPosition, currentPiece);
+        }
         return validMoves;
     }
+
 
     /**
      * Makes a move in a chess game
@@ -129,7 +166,23 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        if (isInCheck(teamColor)) {
+            return false;
+        }
+        HashSet<ChessMove> moves = new HashSet<>();
+        for (int row = 1; row <= 8; row++) {
+            for (int column = 1; column <= 8; column++) {
+                ChessPiece pieceAtNewPosition = board.getPiece(new ChessPosition(row, column));
+                ChessPosition position = new ChessPosition(row, column);
+
+                if (pieceAtNewPosition != null && pieceAtNewPosition.getTeamColor() == teamColor) {
+                    moves.addAll(validMoves(position));
+                    // if there are no moves, it means stalemate.
+                }
+            }
+        }
+        // this means there is at least one move.
+        return !moves.isEmpty();
     }
 
     /**
@@ -155,11 +208,11 @@ public class ChessGame {
             return false;
         }
         ChessGame chessGame = (ChessGame) o;
-        return gameOver == chessGame.gameOver && Objects.equals(board, chessGame.board) && teamTurn == chessGame.teamTurn;
+        return Objects.equals(board, chessGame.board) && teamTurn == chessGame.teamTurn;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(board, teamTurn, gameOver);
+        return Objects.hash(board, teamTurn);
     }
 }
