@@ -17,6 +17,7 @@ public class ChessGame {
     public ChessGame() {
         teamTurn = TeamColor.WHITE;
         board = new ChessBoard();
+        board.resetBoard();
     }
 
     /**
@@ -97,6 +98,11 @@ public class ChessGame {
         return validMoves;
     }
 
+    // if in stalemate, it means there can be no moves.
+    // if in checkmate, it means there can be possible moves, but the king cannot escape.
+    // checkmate is priority.
+    // if both stalemate and checkmate, set stalemate to false, set checkmate to true.
+
 
     /**
      * Makes a move in a chess game
@@ -106,6 +112,34 @@ public class ChessGame {
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
 
+        ChessPosition piecePosition = move.getStartPosition();
+         if (board.getPiece(piecePosition) == null) {
+             throw new InvalidMoveException();
+         }
+
+        boolean teamTurn = getTeamTurn() == board.getPiece(piecePosition).getTeamColor();
+        Collection<ChessMove> validMoves = validMoves(piecePosition);
+
+        if (validMoves.isEmpty()) {
+            throw new InvalidMoveException("There are no more moves to make");
+        }
+
+        boolean isValidMove = validMoves.contains(move);
+
+        if (isValidMove && teamTurn){
+            ChessPiece pieceToMove = board.getPiece(piecePosition);
+            if (move.getPromotionPiece() != null){
+                pieceToMove = new ChessPiece(pieceToMove.getTeamColor(), move.getPromotionPiece());
+            }
+
+            // move the piece
+            board.addPiece(move.getEndPosition(), pieceToMove);
+            // remove the old piece
+            board.addPiece(move.getStartPosition(), null);
+            setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE);
+        } else {
+            throw new InvalidMoveException("There are no more moves to make");
+        }
     }
 
     /**
@@ -155,7 +189,25 @@ public class ChessGame {
      * @return True if the specified team is in checkmate
      */
     public boolean isInCheckmate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        if (!isInCheck(teamColor)) {
+            return false;
+        }
+
+        HashSet<ChessMove> moves = new HashSet<>();
+
+        // go through all pieces, and see if there is a move, to put the king out of check.
+        for (int row = 1; row <= 8; row++) {
+            for (int column = 1; column <= 8; column++) {
+                ChessPiece pieceAtNewPosition = board.getPiece(new ChessPosition(row, column));
+                ChessPosition position = new ChessPosition(row, column);
+
+                if (pieceAtNewPosition != null && pieceAtNewPosition.getTeamColor() == teamColor) {
+                    moves.addAll(validMoves(position));
+                    // if there are no moves, it means stalemate.
+                }
+            }
+        }
+        return moves.isEmpty();
     }
 
     /**
@@ -169,6 +221,7 @@ public class ChessGame {
         if (isInCheck(teamColor)) {
             return false;
         }
+
         HashSet<ChessMove> moves = new HashSet<>();
         for (int row = 1; row <= 8; row++) {
             for (int column = 1; column <= 8; column++) {
@@ -182,7 +235,7 @@ public class ChessGame {
             }
         }
         // this means there is at least one move.
-        return !moves.isEmpty();
+        return moves.isEmpty();
     }
 
     /**
@@ -208,11 +261,16 @@ public class ChessGame {
             return false;
         }
         ChessGame chessGame = (ChessGame) o;
-        return Objects.equals(board, chessGame.board) && teamTurn == chessGame.teamTurn;
+        return (board.equals(chessGame.board)) && teamTurn == chessGame.teamTurn;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(board, teamTurn);
+    }
+
+    @Override
+    public String toString() {
+        return board.toString();
     }
 }

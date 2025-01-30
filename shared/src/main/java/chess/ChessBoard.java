@@ -92,4 +92,40 @@ public class ChessBoard {
         return Arrays.deepHashCode(board);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("  a  b  c  d  e  f  g  h \n");
+
+        for (int row = 7; row >= 0; row--) {
+            sb.append((row + 1)).append(" ");
+            for (int col = 0; col < 8; col++) {
+                ChessPiece piece = board[row][col];
+                if (piece == null) {
+                    sb.append(".  ");
+                } else {
+                    sb.append(getPieceSymbol(piece)).append("  ");
+                }
+            }
+            sb.append((row + 1)).append("\n");
+        }
+
+        sb.append("  a  b  c  d  e  f  g  h \n");
+        return sb.toString();
+    }
+
+    private String getPieceSymbol(ChessPiece piece) {
+        char symbol;
+        switch (piece.getPieceType()) {
+            case PAWN -> symbol = 'P';
+            case ROOK -> symbol = 'R';
+            case KNIGHT -> symbol = 'N';
+            case BISHOP -> symbol = 'B';
+            case QUEEN -> symbol = 'Q';
+            case KING -> symbol = 'K';
+            default -> symbol = '?';
+        }
+        return piece.getTeamColor() == ChessGame.TeamColor.WHITE ? Character.toString(symbol) :
+                Character.toString(Character.toLowerCase(symbol));
+    }
 }
