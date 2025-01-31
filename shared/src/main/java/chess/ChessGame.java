@@ -176,6 +176,24 @@ public class ChessGame {
         return false;
     }
 
+    private boolean noValidMoves(TeamColor teamColor) {
+        // iterates through board
+        for (int row = 1; row <= 8; row++) {
+            for (int column = 1; column <= 8; column++) {
+                // finds pieces and sees if they have valid moves.
+                ChessPiece pieceAtNewPosition = board.getPiece(new ChessPosition(row, column));
+                ChessPosition position = new ChessPosition(row, column);
+
+                if (pieceAtNewPosition != null && pieceAtNewPosition.getTeamColor() == teamColor) {
+                    if (!validMoves(position).isEmpty()) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     /**
      * Determines if the given team is in checkmate
      *
@@ -186,22 +204,8 @@ public class ChessGame {
         if (!isInCheck(teamColor)) {
             return false;
         }
-
-        HashSet<ChessMove> moves = new HashSet<>();
-
-        // go through all pieces, and see if there is a move, to put the king out of check.
-        for (int row = 1; row <= 8; row++) {
-            for (int column = 1; column <= 8; column++) {
-                ChessPiece pieceAtNewPosition = board.getPiece(new ChessPosition(row, column));
-                ChessPosition position = new ChessPosition(row, column);
-
-                if (pieceAtNewPosition != null && pieceAtNewPosition.getTeamColor() == teamColor) {
-                    moves.addAll(validMoves(position));
-                    // if there are no moves, it means stalemate.
-                }
-            }
-        }
-        return moves.isEmpty();
+        // if it is IN CHECK && there are no valid moves, it is a checkmate. `
+        return noValidMoves(teamColor);
     }
 
     /**
@@ -215,21 +219,8 @@ public class ChessGame {
         if (isInCheck(teamColor)) {
             return false;
         }
-
-        HashSet<ChessMove> moves = new HashSet<>();
-        for (int row = 1; row <= 8; row++) {
-            for (int column = 1; column <= 8; column++) {
-                ChessPiece pieceAtNewPosition = board.getPiece(new ChessPosition(row, column));
-                ChessPosition position = new ChessPosition(row, column);
-
-                if (pieceAtNewPosition != null && pieceAtNewPosition.getTeamColor() == teamColor) {
-                    moves.addAll(validMoves(position));
-                    // if there are no moves, it means stalemate.
-                }
-            }
-        }
-        // this means there is at least one move.
-        return moves.isEmpty();
+        // if there are no valid moves && it is not in check, is a stalemate.
+        return noValidMoves(teamColor);
     }
 
     /**
