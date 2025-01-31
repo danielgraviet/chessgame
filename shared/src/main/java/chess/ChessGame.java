@@ -96,13 +96,6 @@ public class ChessGame {
         }
         return validMoves;
     }
-
-    // if in stalemate, it means there can be no moves.
-    // if in checkmate, it means there can be possible moves, but the king cannot escape.
-    // checkmate is priority.
-    // if both stalemate and checkmate, set stalemate to false, set checkmate to true.
-
-
     /**
      * Makes a move in a chess game
      *
@@ -112,6 +105,8 @@ public class ChessGame {
     public void makeMove(ChessMove move) throws InvalidMoveException {
 
         ChessPosition piecePosition = move.getStartPosition();
+
+        // checks if the starting position has piece
          if (board.getPiece(piecePosition) == null) {
              throw new InvalidMoveException();
          }
