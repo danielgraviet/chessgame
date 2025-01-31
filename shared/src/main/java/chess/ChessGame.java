@@ -56,12 +56,12 @@ public class ChessGame {
             return new HashSet<>();
         }
         // get all moves for the piece at the position
-        HashSet<ChessMove> possibleMoves = (HashSet<ChessMove>) currentPiece.pieceMoves(board, startPosition);
+        Collection<ChessMove> possibleMoves = currentPiece.pieceMoves(board, startPosition);
 
         // hash set to store all the valid moves.
         HashSet<ChessMove> validMoves = new HashSet<>();
 
-        // loop through all possible moves
+        // loop through all possible moves and checks if they put the king in check.
         for (ChessMove move : possibleMoves) {
             ChessPiece temporaryPiece = board.getPiece(move.getEndPosition());
             // this places the piece at the new position to simulate a move.
