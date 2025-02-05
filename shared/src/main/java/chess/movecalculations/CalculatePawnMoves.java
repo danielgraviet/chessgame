@@ -1,4 +1,4 @@
-package chess.MoveCalculations;
+package chess.movecalculations;
 
 import chess.ChessBoard;
 import chess.ChessPosition;
@@ -77,12 +77,11 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
             ChessPiece newPiece = board.getPiece(newPosition);
 
             if (newPiece != null && newPiece.getTeamColor() != currentPiece.getTeamColor()) {
-                if ((teamColor == ChessGame.TeamColor.WHITE && newRow == 8 || teamColor == ChessGame.TeamColor.BLACK && newRow == 1)) {
-                    for (ChessPiece.PieceType promotionPiece : ChessPiece.PieceType.values()) {
-                        if (promotionPiece != ChessPiece.PieceType.PAWN && promotionPiece != ChessPiece.PieceType.KING) {
-                            moves.add(new ChessMove(position, newPosition, promotionPiece));
-                        }
-                    }
+
+                // could be simplified to need promotion boolean
+                if (CalculatePawnMoves.needsPromotion(teamColor, newRow)) {
+                    // this for loop could be compartmentalized to get promotion pieces.
+                    CalculatePawnMoves.addPromotionPieces(moves, position, newPosition);
                 } else {
                     moves.add(new ChessMove(position, newPosition, null));
                 }
@@ -114,7 +113,7 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
             return moves;
             // if piece is NOT there
         } else {
-            if (newRow == 8 && teamColor == ChessGame.TeamColor.WHITE || newRow == 1 && teamColor == ChessGame.TeamColor.BLACK) {
+            if (CalculatePawnMoves.needsPromotion(teamColor, newRow)) {
                 for (ChessPiece.PieceType promotionPiece : ChessPiece.PieceType.values()) {
                     if (promotionPiece != ChessPiece.PieceType.PAWN && promotionPiece != ChessPiece.PieceType.KING) {
                         moves.add(new ChessMove(position, newPosition, promotionPiece));
@@ -129,6 +128,20 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
         // if on the board, check if it is promotion row
         // if promotion row, add the correct pieces.
         return moves;
+    }
+
+    public static boolean needsPromotion(ChessGame.TeamColor teamColor, int row) {
+        if (teamColor == ChessGame.TeamColor.WHITE  && row == 8) {
+            return true;
+        } else return teamColor == ChessGame.TeamColor.BLACK && row == 1;
+    }
+
+    public static void addPromotionPieces(HashSet<ChessMove> moves, ChessPosition position, ChessPosition newPosition) {
+        for (ChessPiece.PieceType promotionPiece : ChessPiece.PieceType.values()) {
+            if (promotionPiece != ChessPiece.PieceType.PAWN && promotionPiece != ChessPiece.PieceType.KING) {
+                moves.add(new ChessMove(position, newPosition, promotionPiece));
+            }
+        }
     }
 }
 

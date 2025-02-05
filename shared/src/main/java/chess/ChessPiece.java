@@ -1,9 +1,7 @@
 package chess;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-import chess.MoveCalculations.CalculateBishopMoves;
 
 /**
  * Represents a single chess piece
@@ -55,17 +53,17 @@ public class ChessPiece {
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         if (pieceType == PieceType.BISHOP) {
-            return chess.MoveCalculations.CalculateBishopMoves.getMoves(board, myPosition);
+            return chess.movecalculations.CalculateBishopMoves.getMoves(board, myPosition);
         } else if (pieceType == PieceType.KING){
-            return chess.MoveCalculations.CalculateKingMoves.getMoves(board, myPosition);
+            return chess.movecalculations.CalculateKingMoves.getMoves(board, myPosition);
         } else if (pieceType == PieceType.QUEEN) {
-            return chess.MoveCalculations.CalculateQueenMoves.getMoves(board, myPosition);
+            return chess.movecalculations.CalculateQueenMoves.getMoves(board, myPosition);
         } else if (pieceType == PieceType.ROOK) {
-            return chess.MoveCalculations.CalculateRookMoves.getMoves(board, myPosition);
+            return chess.movecalculations.CalculateRookMoves.getMoves(board, myPosition);
         } else if (pieceType == PieceType.KNIGHT) {
-            return chess.MoveCalculations.CalculateKnightMoves.getMoves(board, myPosition);
+            return chess.movecalculations.CalculateKnightMoves.getMoves(board, myPosition);
         } else if (pieceType == PieceType.PAWN) {
-            return chess.MoveCalculations.CalculatePawnMoves.getMoves(board, myPosition);
+            return chess.movecalculations.CalculatePawnMoves.getMoves(board, myPosition);
         } else {
             return null;
         }

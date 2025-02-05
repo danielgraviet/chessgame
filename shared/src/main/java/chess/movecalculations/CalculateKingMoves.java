@@ -1,8 +1,7 @@
-package chess.MoveCalculations;
+package chess.movecalculations;
 
 import chess.*;
 import java.util.Collection;
-import java.util.HashSet;
 
 public class CalculateKingMoves implements PieceMoveCalculator {
     public static Collection<ChessMove> getMoves(ChessBoard board, ChessPosition position) {
