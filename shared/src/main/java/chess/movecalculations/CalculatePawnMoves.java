@@ -114,11 +114,8 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
             // if piece is NOT there
         } else {
             if (CalculatePawnMoves.needsPromotion(teamColor, newRow)) {
-                for (ChessPiece.PieceType promotionPiece : ChessPiece.PieceType.values()) {
-                    if (promotionPiece != ChessPiece.PieceType.PAWN && promotionPiece != ChessPiece.PieceType.KING) {
-                        moves.add(new ChessMove(position, newPosition, promotionPiece));
-                    }
-                }
+                // this for loop could be compartmentalized to get promotion pieces.
+                CalculatePawnMoves.addPromotionPieces(moves, position, newPosition);
             } else {
                 moves.add(new ChessMove(position, newPosition, null));
             }
