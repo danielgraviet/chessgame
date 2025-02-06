@@ -77,13 +77,7 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
             ChessPiece newPiece = board.getPiece(newPosition);
 
             if (newPiece != null && newPiece.getTeamColor() != currentPiece.getTeamColor()) {
-                // could be simplified to need promotion boolean
-                if (CalculatePawnMoves.needsPromotion(teamColor, newRow)) {
-                    // this for loop could be compartmentalized to get promotion pieces.
-                    CalculatePawnMoves.addPromotionPieces(moves, position, newPosition);
-                } else {
-                    moves.add(new ChessMove(position, newPosition, null));
-                }
+                CalculatePawnMoves.addMoveOrPromotion(moves, position, newPosition, teamColor);
             }
         }
         return moves;
