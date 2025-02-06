@@ -77,7 +77,6 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
             ChessPiece newPiece = board.getPiece(newPosition);
 
             if (newPiece != null && newPiece.getTeamColor() != currentPiece.getTeamColor()) {
-
                 // could be simplified to need promotion boolean
                 if (CalculatePawnMoves.needsPromotion(teamColor, newRow)) {
                     // this for loop could be compartmentalized to get promotion pieces.
@@ -108,29 +107,27 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
 
         // check if ANY piece is there
         if (newPiece != null) {
-            // if ANY piece is there
-            // stop
             return moves;
-            // if piece is NOT there
         } else {
-            if (CalculatePawnMoves.needsPromotion(teamColor, newRow)) {
-                // this for loop could be compartmentalized to get promotion pieces.
-                CalculatePawnMoves.addPromotionPieces(moves, position, newPosition);
-            } else {
-                moves.add(new ChessMove(position, newPosition, null));
-            }
+            CalculatePawnMoves.addMoveOrPromotion(moves, position, newPosition, teamColor);
         }
-        // advance one spot
-        // check if on the board
-        // if on the board, check if it is promotion row
-        // if promotion row, add the correct pieces.
         return moves;
+    }
+
+    public static void addMoveOrPromotion(HashSet<ChessMove> moves,  ChessPosition position,  ChessPosition newPosition, ChessGame.TeamColor teamColor) {
+        if (CalculatePawnMoves.needsPromotion(teamColor, newPosition.getRow())) {
+            CalculatePawnMoves.addPromotionPieces(moves, position, newPosition);
+        } else {
+            moves.add(new ChessMove(position, newPosition, null));
+        }
     }
 
     public static boolean needsPromotion(ChessGame.TeamColor teamColor, int row) {
         if (teamColor == ChessGame.TeamColor.WHITE  && row == 8) {
             return true;
-        } else return teamColor == ChessGame.TeamColor.BLACK && row == 1;
+        } else {
+            return teamColor == ChessGame.TeamColor.BLACK && row == 1;
+        }
     }
 
     public static void addPromotionPieces(HashSet<ChessMove> moves, ChessPosition position, ChessPosition newPosition) {
