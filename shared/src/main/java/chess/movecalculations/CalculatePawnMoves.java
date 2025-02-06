@@ -108,7 +108,13 @@ public class CalculatePawnMoves implements PieceMoveCalculator {
         return moves;
     }
 
-    public static void addMoveOrPromotion(HashSet<ChessMove> moves,  ChessPosition position,  ChessPosition newPosition, ChessGame.TeamColor teamColor) {
+    public static void addMoveOrPromotion(
+            HashSet<ChessMove> moves,  // takes existing move hashset and sees if it needs promotion, or moves.
+            ChessPosition position,
+            ChessPosition newPosition,
+            ChessGame.TeamColor teamColor)
+    {
+
         if (CalculatePawnMoves.needsPromotion(teamColor, newPosition.getRow())) {
             CalculatePawnMoves.addPromotionPieces(moves, position, newPosition);
         } else {
