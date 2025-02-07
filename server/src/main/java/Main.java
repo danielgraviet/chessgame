@@ -1,8 +1,8 @@
 import chess.*;
 import dataaccess.DataAccessException;
+import model.users.UserData;
 import server.Server;
-import dataaccess.UserDataDAO;
-import model.*;
+import dataaccess.MemoryUserDAO;
 
 public class Main {
 
@@ -16,7 +16,7 @@ public class Main {
         server.run(8080);
 
         try {
-            UserDataDAO userDataDAO = new UserDataDAO();
+            MemoryUserDAO userDataDAO = new MemoryUserDAO();
             UserData user = new UserData("danny", "secret123", "dgravs5@gmail.com");
             userDataDAO.insertUser(user);
 

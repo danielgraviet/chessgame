@@ -1,13 +1,34 @@
 package dataaccess;
 
-import model.UserData;
+import model.users.UserData;
 
 import java.util.HashSet;
 import java.util.Collection;
 
-public class UserDataDAO implements UserDAO {
+public class MemoryUserDAO implements UserDAO {
     // local storage
     private final HashSet<UserData> UserStorage = new HashSet<>();
+
+    public boolean authenticate(String username, String password) throws DataAccessException {
+        // check if username is in the database. if it is not, that means it should be a new user.
+        for (UserData user : UserStorage) {
+            if (user.username().equals(username) && user.password().equals(password)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    // checks if the username is in the db already.
+    public boolean newUser(String username) throws DataAccessException {
+        for (UserData user : UserStorage) {
+            if (user.username().equals(username)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // CREATE
     public void insertUser(UserData user) throws DataAccessException {
@@ -17,7 +38,6 @@ public class UserDataDAO implements UserDAO {
         }
         // adding to local storage
         UserStorage.add(user);
-
     }
 
     // READ
@@ -60,5 +80,10 @@ public class UserDataDAO implements UserDAO {
         }
 
         UserStorage.remove(user);
+    }
+
+    // CLEAR
+    public void clear() throws DataAccessException {
+        UserStorage.clear();
     }
 }
