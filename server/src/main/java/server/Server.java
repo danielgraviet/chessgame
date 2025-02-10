@@ -1,13 +1,10 @@
 package server;
 
-import dataaccess.AuthDAO;
-import dataaccess.DataAccessException;
-import dataaccess.UserDAO;
+import dataaccess.*;
 import spark.*;
 import service.UserService;
 
-import javax.xml.crypto.Data;
-import java.sql.SQLException;
+
 
 public class Server {
     UserHandler userServer;
@@ -16,6 +13,8 @@ public class Server {
     AuthDAO authDAO;
 
     public Server() {
+        this.userDAO = new MemoryUserDAO();
+        this.authDAO = new MemoryAuthDAO();
         userService = new UserService(userDAO, authDAO);
         this.userServer = new UserHandler(userService);
     }

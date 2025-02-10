@@ -1,6 +1,7 @@
 package dataaccess;
 
 import model.users.UserData;
+import model.error.error;
 
 import java.util.HashSet;
 import java.util.Collection;
@@ -11,12 +12,16 @@ public class MemoryUserDAO implements UserDAO {
 
     public boolean authenticate(String username, String password) throws DataAccessException {
         // check if username is in the database. if it is not, that means it should be a new user.
+        if (UserStorage.isEmpty()) {
+            return true;
+        }
+
         for (UserData user : UserStorage) {
             if (user.username().equals(username) && user.password().equals(password)) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
 

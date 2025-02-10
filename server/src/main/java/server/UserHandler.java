@@ -1,5 +1,6 @@
 package server;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import dataaccess.DataAccessException;
 import model.auth.AuthData;
 import model.users.UserData;
@@ -29,13 +30,36 @@ public class UserHandler {
         return authData;
     }
 
-    public Object register(Request req, Response res) throws DataAccessException {
+    public Object register(Request req, Response res) {
         UserData userData = new Gson().fromJson(req.body(), UserData.class);
-        AuthData authData = userService.register(userData);
+        AuthData authData = null;
+        try {
+            authData = userService.register(userData);
 
+            // handles errors.
+            if (userData.username() == null || userData.password() == null) {
+                res.status(400);
+                return createErrorResponse("Error: bad request");
+            }
+
+        } catch (DataAccessException e) {
+            if (e.getMessage().equals("User already exists")) {
+                res.status(403);
+                return createErrorResponse("Error: already taken");
+            }
+
+            res.status(500);
+            return createErrorResponse("Error: " + e.getMessage());
+            // store string inside object, and then return it as a gson.
+        }
         res.status(200);
+        return new Gson().toJson(authData);
+    }
 
-        return authData;
+    private String createErrorResponse(String error) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("message", error);
+        return new Gson().toJson(jsonObject);
     }
 }
 

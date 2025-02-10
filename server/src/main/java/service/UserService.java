@@ -14,6 +14,12 @@ public class UserService {
     public UserService(UserDAO userDAO, AuthDAO authDAO) {
         this.userDAO = userDAO;
         this.authDAO = authDAO;
+        if (userDAO == null) {
+            throw new IllegalArgumentException("userDAO is null");
+        }
+        if (authDAO == null) {
+            throw new IllegalArgumentException("authDAO is null");
+        }
     }
 
     // this function should simply return auth data if it is valid username and password.
@@ -32,6 +38,7 @@ public class UserService {
         if (memoryUserDAO.authenticate(user.username(), user.password())) {
             AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
             authDAO.addAuthData(authData);
+            userDAO.insertUser(user);
             return authData;
         } else {
             throw new DataAccessException("User Authentication Failed.");
