@@ -25,7 +25,7 @@ public class UserService {
     // this function should simply return auth data if it is valid username and password.
     public AuthData login(UserData user) throws DataAccessException {
         // check login data.
-        if (userDAO.authenticateLogin(user.username(), user.password())) {
+        if (userDAO.authenticate(user.username(), user.password(), UserDAO.AuthMode.LOGIN)) {
             AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
             authDAO.addAuthData(authData);
             return authData;
@@ -35,7 +35,7 @@ public class UserService {
     }
 
     public AuthData register(UserData user) throws DataAccessException {
-        if (userDAO.authenticateRegister(user.username(), user.password())) {
+        if (userDAO.authenticate(user.username(), user.password(), UserDAO.AuthMode.REGISTER)) {
             AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
             authDAO.addAuthData(authData);
             userDAO.insertUser(user);

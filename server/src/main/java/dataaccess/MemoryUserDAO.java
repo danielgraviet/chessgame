@@ -2,6 +2,7 @@ package dataaccess;
 
 import model.users.UserData;
 
+import javax.xml.crypto.Data;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.Objects;
@@ -10,34 +11,17 @@ public class MemoryUserDAO implements UserDAO {
     // local storage
     private final HashSet<UserData> UserStorage = new HashSet<>();
 
-    public boolean authenticateRegister(String username, String password) throws DataAccessException {
-        // what happens for second user?
+    public boolean authenticate(String username, String password, AuthMode mode) throws DataAccessException{
         if (UserStorage.isEmpty()) {
-            return true;
-        }
-
-        if (newUser(username)) {
-            return true;
-        }
-        // i need to adjust this so that if the user is not in the data base, it should return true, to allow new users to register.
-        for (UserData user : UserStorage) {
-           if (user.username().equals(username)) {
-               if (Objects.equals(password, user.password())) {
-                   return true;
-               } else {
-                   throw new DataAccessException("Username and password do not match.");
-               }
+            if (mode == AuthMode.REGISTER) {
+                return true;
+            } else {
+                // this means they are trying to login.
+                return false;
             }
         }
-        throw new DataAccessException("User not found.");
-    }
 
-    public boolean authenticateLogin(String username, String password) throws DataAccessException {
-        if (UserStorage.isEmpty()) {
-            return false;
-        }
-
-        for (UserData user : UserStorage){
+        for (UserData user : UserStorage) {
             if (user.username().equals(username)) {
                 if (Objects.equals(password, user.password())) {
                     return true;
@@ -46,12 +30,16 @@ public class MemoryUserDAO implements UserDAO {
                 }
             }
         }
-        throw new DataAccessException("User not found.");
+
+        if (mode == AuthMode.REGISTER && newUser(username)) {
+            return true;
+        } else {
+            throw new DataAccessException("User not found.");
+        }
     }
 
-
     // checks if the username is in the db already.
-    public boolean newUser(String username) throws DataAccessException {
+    public boolean newUser(String username) {
         for (UserData user : UserStorage) {
             if (user.username().equals(username)) {
                 return false;
@@ -113,7 +101,7 @@ public class MemoryUserDAO implements UserDAO {
     }
 
     // CLEAR
-    public void clear() throws DataAccessException {
+    public void clear() {
         UserStorage.clear();
     }
 }

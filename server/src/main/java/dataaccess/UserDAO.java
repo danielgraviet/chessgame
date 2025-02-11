@@ -1,13 +1,18 @@
 package dataaccess;
 
 import model.users.UserData;
+import org.w3c.dom.CDATASection;
+
 import java.util.Collection;
 
 
 public interface UserDAO {
+    enum AuthMode {
+        REGISTER,
+        LOGIN
+    };
     void insertUser(UserData user) throws DataAccessException;
-    boolean authenticateRegister(String username, String password) throws DataAccessException;
-    boolean authenticateLogin(String username, String password) throws DataAccessException;
+    boolean authenticate(String username, String password, AuthMode mode) throws DataAccessException;
     boolean newUser(String username) throws DataAccessException;
     UserData getUser(String username) throws DataAccessException;
     Collection<UserData> getAllUsers() throws DataAccessException;
