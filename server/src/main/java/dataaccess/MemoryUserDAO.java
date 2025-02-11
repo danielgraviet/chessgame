@@ -1,27 +1,52 @@
 package dataaccess;
 
 import model.users.UserData;
-import model.error.error;
 
 import java.util.HashSet;
 import java.util.Collection;
+import java.util.Objects;
 
 public class MemoryUserDAO implements UserDAO {
     // local storage
     private final HashSet<UserData> UserStorage = new HashSet<>();
 
-    public boolean authenticate(String username, String password) throws DataAccessException {
-        // check if username is in the database. if it is not, that means it should be a new user.
+    public boolean authenticateRegister(String username, String password) throws DataAccessException {
+        // what happens for second user?
         if (UserStorage.isEmpty()) {
             return true;
         }
 
+        if (newUser(username)) {
+            return true;
+        }
+        // i need to adjust this so that if the user is not in the data base, it should return true, to allow new users to register.
         for (UserData user : UserStorage) {
-            if (user.username().equals(username) && user.password().equals(password)) {
-                return false;
+           if (user.username().equals(username)) {
+               if (Objects.equals(password, user.password())) {
+                   return true;
+               } else {
+                   throw new DataAccessException("Username and password do not match.");
+               }
             }
         }
-        return true;
+        throw new DataAccessException("User not found.");
+    }
+
+    public boolean authenticateLogin(String username, String password) throws DataAccessException {
+        if (UserStorage.isEmpty()) {
+            return false;
+        }
+
+        for (UserData user : UserStorage){
+            if (user.username().equals(username)) {
+                if (Objects.equals(password, user.password())) {
+                    return true;
+                } else {
+                    throw new DataAccessException("Username and password do not match.");
+                }
+            }
+        }
+        throw new DataAccessException("User not found.");
     }
 
 

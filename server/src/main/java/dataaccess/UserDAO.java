@@ -6,7 +6,8 @@ import java.util.Collection;
 
 public interface UserDAO {
     void insertUser(UserData user) throws DataAccessException;
-    boolean authenticate(String username, String password) throws DataAccessException;
+    boolean authenticateRegister(String username, String password) throws DataAccessException;
+    boolean authenticateLogin(String username, String password) throws DataAccessException;
     boolean newUser(String username) throws DataAccessException;
     UserData getUser(String username) throws DataAccessException;
     Collection<UserData> getAllUsers() throws DataAccessException;

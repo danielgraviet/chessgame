@@ -8,26 +8,35 @@ import spark.Request;
 import spark.Response;
 import service.UserService;
 
+import javax.xml.crypto.Data;
+
 public class UserHandler {
 
-    UserService userService;
+    private final UserService userService;
 
     public UserHandler(UserService userService) {
         this.userService = userService;
     }
 
-    public Object login(Request req, Response res) throws DataAccessException {
-        // send request with correct username and password?
-        // turn my data object into the correct json format with GSON stuff.
-        UserData userData = new Gson().fromJson(req.body(), UserData.class);
-        AuthData authData = userService.login(userData);
+    public Object login(Request req, Response res) {
+        AuthData authData = null;
+        try {
+            UserData userData = new Gson().fromJson(req.body(), UserData.class);
+            authData = userService.login(userData);
+            System.out.println("Login success: " + authData);
 
-
-        // this should give success response of 200
-        res.status(200);
-        // return a username and authToken response.
-        // failure response of 401 unauthorized or 500 other errors.
-        return authData;
+            res.status(200);
+            return new Gson().toJson(authData);
+        } catch (DataAccessException e){
+            System.out.println("Login failed: " + e.getMessage());
+            if (e.getMessage().contains("Username and password do not match.") || e.getMessage().contains("User not found.")){
+                res.status(401);
+                return createErrorResponse("Error: unauthorized");
+            } else {
+                res.status(500);
+                return createErrorResponse("Error: " + e.getMessage());
+            }
+        }
     }
 
     public Object register(Request req, Response res) {
