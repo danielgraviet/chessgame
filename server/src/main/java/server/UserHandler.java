@@ -3,11 +3,13 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dataaccess.DataAccessException;
 import model.auth.AuthData;
+import model.users.EmptyResponse;
 import model.users.UserData;
 import spark.Request;
 import spark.Response;
 import service.UserService;
 
+import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.xml.crypto.Data;
 
 public class UserHandler {
@@ -19,7 +21,7 @@ public class UserHandler {
     }
 
     public Object login(Request req, Response res) {
-        AuthData authData = null;
+        AuthData authData;
         try {
             UserData userData = new Gson().fromJson(req.body(), UserData.class);
             authData = userService.login(userData);
@@ -39,9 +41,36 @@ public class UserHandler {
         }
     }
 
+    public Object logout(Request req, Response res) {
+        // not sure if this even works?
+
+        try {
+            // questions to ask?
+            // what do I need to logout?
+            String authData = req.headers("Authorization");
+            System.out.println(authData);
+
+            // study headers,
+            //
+            userService.logout(authData);
+            res.status(200);
+            return new Gson().toJson(new EmptyResponse());
+        } catch (DataAccessException e) {
+
+            if (e.getMessage().contains("Authorization is not valid.")) {
+                res.status(401);
+                return createErrorResponse("Error: unauthorized");
+
+            } else {
+                res.status(500);
+                return createErrorResponse("Error: " + e.getMessage());
+            }
+        }
+    }
+
     public Object register(Request req, Response res) {
         UserData userData = new Gson().fromJson(req.body(), UserData.class);
-        AuthData authData = null;
+        AuthData authData;
         try {
             authData = userService.register(userData);
 

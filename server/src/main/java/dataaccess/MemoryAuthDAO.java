@@ -1,6 +1,7 @@
 package dataaccess;
 import model.auth.AuthData;
-
+import java.util.HashMap;
+import javax.xml.crypto.Data;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -23,6 +24,16 @@ public class MemoryAuthDAO implements AuthDAO {
         }
     };
 
+    public boolean removeAuthData(String token) throws DataAccessException {
+        // where is my authToken being stored? is it inside the Auth
+        for (AuthData authData : AuthStorage) {
+            if (authData.authToken().equals(token)) {
+                AuthStorage.remove(authData);
+                return true;
+            }
+        }
+        throw new DataAccessException("Error: FIX ME");
+    }
 
     public void clear() throws DataAccessException {
         AuthStorage.clear();

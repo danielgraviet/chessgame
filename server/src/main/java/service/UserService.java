@@ -1,8 +1,12 @@
 package service;
+import com.sun.tools.jconsole.JConsoleContext;
 import dataaccess.*;
 import model.users.UserData;
 import model.auth.AuthData;
+import spark.Request;
+import spark.Response;
 
+import javax.xml.crypto.Data;
 import java.util.UUID;
 
 public class UserService {
@@ -43,6 +47,11 @@ public class UserService {
         } else {
             throw new DataAccessException("User Authentication Failed.");
         }
+    }
+
+    // this is removing the auth token from the db, if it is found.
+    public void logout(String token) throws DataAccessException{
+       authDAO.removeAuthData(token);
     }
 
     public void clear() throws DataAccessException {

@@ -3,6 +3,7 @@ package server;
 import dataaccess.*;
 import spark.*;
 import service.UserService;
+import server.UserHandler;
 
 
 
@@ -28,6 +29,8 @@ public class Server {
         Spark.post("/user", userServer::register);
         Spark.post("/session", userServer::login);
         Spark.delete("/db", this::clear);
+        Spark.delete("/session", userServer::logout);
+
         Spark.awaitInitialization();
         return Spark.port();
     }
