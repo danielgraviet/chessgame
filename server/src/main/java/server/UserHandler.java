@@ -9,9 +9,6 @@ import spark.Request;
 import spark.Response;
 import service.UserService;
 
-import javax.print.attribute.HashPrintRequestAttributeSet;
-import javax.xml.crypto.Data;
-
 public class UserHandler {
 
     private final UserService userService;
@@ -31,7 +28,7 @@ public class UserHandler {
             return new Gson().toJson(authData);
         } catch (DataAccessException e){
             System.out.println("Login failed: " + e.getMessage());
-            if (e.getMessage().contains("Username and password do not match.") || e.getMessage().contains("User not found.")){
+            if (e.getMessage().contains("Username and password do not match.") || e.getMessage().contains("User not found.") || e.getMessage().contains("User Authentication Failed.") || e.getMessage().contains("Invalid password.")) {
                 res.status(401);
                 return createErrorResponse("Error: unauthorized");
             } else {
@@ -57,7 +54,7 @@ public class UserHandler {
             return new Gson().toJson(new EmptyResponse());
         } catch (DataAccessException e) {
 
-            if (e.getMessage().contains("Authorization is not valid.")) {
+            if (e.getMessage().contains("Invalid AuthToken.")) {
                 res.status(401);
                 return createErrorResponse("Error: unauthorized");
 
@@ -81,7 +78,7 @@ public class UserHandler {
             }
 
         } catch (DataAccessException e) {
-            if (e.getMessage().equals("User already exists")) {
+            if (e.getMessage().equals("User already exists") || e.getMessage().equals("User Authentication Failed.")) {
                 res.status(403);
                 return createErrorResponse("Error: already taken");
             }

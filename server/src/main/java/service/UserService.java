@@ -28,18 +28,27 @@ public class UserService {
 
     // this function should simply return auth data if it is valid username and password.
     public AuthData login(UserData user) throws DataAccessException {
-        // check login data.
-        if (userDAO.authenticate(user.username(), user.password(), UserDAO.AuthMode.LOGIN)) {
-            AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
-            authDAO.addAuthData(authData);
-            return authData;
+
+        // this makes sure that a username was returned
+        if (userDAO.getUser(user.username()) != null) {
+
+            // this checks that the passwords match
+            if (userDAO.getUser(user.username()).password().equals(user.password())) {
+                AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
+                authDAO.addAuthData(authData);
+                return authData;
+            } else {
+                throw new DataAccessException("Invalid password.");
+            }
         } else {
             throw new DataAccessException("User Authentication Failed.");
         }
     }
 
     public AuthData register(UserData user) throws DataAccessException {
-        if (userDAO.authenticate(user.username(), user.password(), UserDAO.AuthMode.REGISTER)) {
+        // this makes sure the username is null, meaning that it does not already exist in the database.
+        if (userDAO.getUser(user.username()) == null) {
+            // check if it is in the database already
             AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
             authDAO.addAuthData(authData);
             userDAO.insertUser(user);
@@ -58,7 +67,4 @@ public class UserService {
         userDAO.clear();
         authDAO.clear();
     }
-    // make model for loginRequest and import it.
-    // make model for loginResult and import it.
-
 }
