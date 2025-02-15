@@ -4,15 +4,16 @@ import com.google.gson.JsonObject;
 import dataaccess.DataAccessException;
 import service.GameService;
 import model.users.EmptyResponse;
+import model.game.JoinGameRequest;
 import model.users.UserData;
 import spark.Request;
 import spark.Response;
 import service.UserService;
 import java.util.HashMap;
 import java.util.Map;
+import chess.ChessGame;
 
 public class GameHandler {
-
     private final GameService gameService;
 
     public GameHandler(GameService gameService) {
@@ -46,6 +47,82 @@ public class GameHandler {
                 res.status(500);
                 return createErrorResponse("Error: " + e.getMessage());
             }
+        }
+    }
+
+    public Object joinGame(Request req, Response res) {
+        try {
+            // make sure request has a valid auth token DG/2-15
+            String authToken = req.headers("Authorization");
+            if (authToken == null || authToken.isEmpty()) {
+                res.status(400);
+                return createErrorResponse("Error: Missing authorization token");
+            }
+
+            // use the JoinGameRequest model to get correct "playerColor" and "gameID"
+            JoinGameRequest joinRequest;
+            try {
+                joinRequest = new Gson().fromJson(req.body(), JoinGameRequest.class);
+            } catch (Exception e) {
+                res.status(400);
+                return createErrorResponse("Error: Invalid JSON in request body");
+            }
+            if (joinRequest == null) {
+                res.status(400);
+                return createErrorResponse("Error: Invalid join request");
+            }
+
+            // get the gameID and teamColor
+            int gameID = joinRequest.gameID();
+            String teamColorStr = joinRequest.playerColor();
+
+            // teamColorStr is getting null, and throwing this error.
+            // questions? Where is the team color being stored?
+            if (teamColorStr == null || teamColorStr.isEmpty()) {
+                res.status(400);
+                return createErrorResponse("Error: Missing team color");
+            }
+
+            // because the TeamColor is an enum, (all caps), we have to convert it here.
+            // this also prevents invalid team colors from being used.
+            ChessGame.TeamColor teamColor;
+            try {
+                teamColor = ChessGame.TeamColor.valueOf(teamColorStr.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                res.status(400);
+                return createErrorResponse("Error: Invalid team color");
+            }
+
+            // join the game
+            gameService.joinGame(authToken, gameID, teamColor);
+
+            res.status(200);
+            return new Gson().toJson(new EmptyResponse());
+        } catch (DataAccessException e) {
+
+            String errorMessage = e.getMessage();
+
+            if (errorMessage.equals("Invalid token.")) {
+                res.status(401);
+                return createErrorResponse("Error: unauthorized");
+
+            } else if (errorMessage.contains("already")) {
+                // This covers error messages where the white or black team already joined.
+                res.status(403);
+                return createErrorResponse("Error: team already taken");
+
+            } else if (errorMessage.contains("Game not found")) {
+                res.status(400);
+                return createErrorResponse("Error: game not found");
+
+            } else {
+                res.status(500);
+                return createErrorResponse("Error: " + errorMessage);
+            }
+
+        } catch (Exception e) {
+            res.status(500);
+            return createErrorResponse("Error: " + e.getMessage());
         }
     }
 

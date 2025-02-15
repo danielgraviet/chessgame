@@ -34,6 +34,35 @@ public class MemoryGameDAO implements GameDAO {
     }
 
     // READ
+    public int getGame(String authToken, String gameName) throws DataAccessException {
+        for (GameData game: gameStorage) {
+            if (game.gameName().equals(gameName)) {
+                return game.gameID();
+            }
+        }
+        throw new DataAccessException("Game not found");
+    }
+
+    public GameData getGameByID(int gameID) throws DataAccessException {
+        for (GameData game: gameStorage) {
+            if (game.gameID() == gameID) {
+                return game;
+            }
+        }
+        throw new DataAccessException("Game not found");
+    }
+
+
     // UPDATE
+    public void updateGame(GameData gameData) throws DataAccessException {
+        boolean removed = gameStorage.removeIf(game -> game.gameID() == gameData.gameID());
+        if (removed) {
+            gameStorage.add(gameData);
+        } else {
+            throw new DataAccessException("Game not found for update.");
+        }
+    }
+
+
     // DELETE
 }

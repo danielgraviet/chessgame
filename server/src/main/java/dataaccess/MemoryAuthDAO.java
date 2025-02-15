@@ -1,11 +1,15 @@
 package dataaccess;
 import model.auth.AuthData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import javax.xml.crypto.Data;
 import java.util.HashSet;
 import java.util.UUID;
 
 public class MemoryAuthDAO implements AuthDAO {
+    private static final Logger log = LoggerFactory.getLogger(MemoryAuthDAO.class);
     public HashSet<AuthData> AuthStorage = new HashSet<>();
 
     // CREATE
@@ -40,6 +44,12 @@ public class MemoryAuthDAO implements AuthDAO {
     }
 
     public AuthData getUser(String token) throws DataAccessException {
+        // notes on stream
+        // .stream() converts AuthStorage hashmap into a stream. streams are good for applying functional operations on objects
+        // filter method then will process each element in stream.
+        // the lambda function describes what the filter should do, and how it should equal the token.
+        // finds first match, or returns a null.
+        // think of a list comprehension in python.
         return AuthStorage.stream().filter(authData -> authData.authToken().equals(token)).findFirst().orElse(null);
     }
 
