@@ -62,6 +62,7 @@ public class MemoryGameDAO implements GameDAO {
             throw new DataAccessException("Game not found for update.");
         }
     }
+
     /* TODO:
     * implement the getAllGames function inside the gameService.java
     * how does can it use the DAO's to do that?

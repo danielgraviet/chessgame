@@ -5,13 +5,11 @@ import dataaccess.DataAccessException;
 import service.GameService;
 import model.users.EmptyResponse;
 import model.game.JoinGameRequest;
-import model.users.UserData;
+import model.game.CreateGameRequest;
 import spark.Request;
 import spark.Response;
-import service.UserService;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import chess.ChessGame;
@@ -33,9 +31,13 @@ public class GameHandler {
                 return createErrorResponse("Error: bad request");
             }
 
-            // need a way to check that the authToken is in the database.
+            CreateGameRequest createGameRequest = new Gson().fromJson(req.body(), CreateGameRequest.class);
+            if (createGameRequest == null || createGameRequest.gameName() == null) {
+                res.status(400);
+                return createErrorResponse("Error: bad request");
+            }
 
-            int gameID = gameService.createGame(authData, req.body());
+            int gameID = gameService.createGame(authData, createGameRequest.gameName());
             res.status(200);
 
             Map<String, Object> responseMap = new HashMap<>();
@@ -144,9 +146,13 @@ public class GameHandler {
             res.status(200);
             return new Gson().toJson(response);
         } catch (Exception e) {
+            if (e.getMessage().equals("Invalid token.")) {
+                res.status(401);
+                return createErrorResponse("Error: unauthorized");
+            }
             res.status(500);
+            return createErrorResponse("Error: " + e.getMessage());
         }
-        return new ArrayList<>();
     }
 
     private String createErrorResponse(String error) {
