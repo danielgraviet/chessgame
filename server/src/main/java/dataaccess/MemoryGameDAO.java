@@ -6,6 +6,7 @@ import dataaccess.MemoryAuthDAO;
 import java.util.HashSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collection;
 
 
 public class MemoryGameDAO implements GameDAO {
@@ -21,14 +22,14 @@ public class MemoryGameDAO implements GameDAO {
         int gameID = nextGameID.getAndIncrement();
 
         // enter names for white and black user
-        String blackUser = "";
-        String whiteUser = "";
+        String blackUsername = null;
+        String whiteUsername = null;
 
         // pass in and set the game name,
 
         // create a new chessGame Object.
         ChessGame chessGame = new ChessGame();
-        GameData game = new GameData(gameID, whiteUser, blackUser, gameName, chessGame);
+        GameData game = new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame);
         gameStorage.add(game);
         return gameID;
     }
@@ -52,7 +53,6 @@ public class MemoryGameDAO implements GameDAO {
         throw new DataAccessException("Game not found");
     }
 
-
     // UPDATE
     public void updateGame(GameData gameData) throws DataAccessException {
         boolean removed = gameStorage.removeIf(game -> game.gameID() == gameData.gameID());
@@ -62,7 +62,22 @@ public class MemoryGameDAO implements GameDAO {
             throw new DataAccessException("Game not found for update.");
         }
     }
+    /* TODO:
+    * implement the getAllGames function inside the gameService.java
+    * how does can it use the DAO's to do that?
+    * will it return a collection of GameData objects?
+    * do I need to make a function in this file, to return the GameData objects
+    * */
 
-
+    public Collection<GameData> getAllGames() throws DataAccessException {
+        return gameStorage;
+    }
     // DELETE
+
+    // CLEAR
+    public void clear() throws DataAccessException {
+        gameStorage.clear();
+        nextGameID.set(1);
+    }
+
 }

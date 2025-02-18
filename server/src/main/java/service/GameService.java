@@ -8,6 +8,8 @@ import dataaccess.UserDAO;
 import model.auth.AuthData;
 import model.game.GameData;
 
+import java.util.Collection;
+
 public class GameService {
     AuthDAO authDAO;
     GameDAO gameDAO;
@@ -46,27 +48,27 @@ public class GameService {
         String username = user.username();
 
         if (teamColor == ChessGame.TeamColor.WHITE) {
-            if (!game.whiteUser().isEmpty()) {
+            if (game.whiteUsername() != null) {
                 throw new DataAccessException("White user already exists.");
             }
 
             GameData updatedGame = new GameData(
                     game.gameID(),
                     username,
-                    game.blackUser(),
+                    game.blackUsername(),
                     game.gameName(),
                     game.game()
             );
 
             gameDAO.updateGame(updatedGame);
         } else if (teamColor == ChessGame.TeamColor.BLACK) {
-            if (!game.blackUser().isEmpty()) {
+            if (game.blackUsername() != null) {
                 throw new DataAccessException("Black user already exists.");
             }
 
             GameData updatedGame = new GameData(
                     game.gameID(),
-                    game.whiteUser(),
+                    game.whiteUsername(),
                     username,
                     game.gameName(),
                     game.game()
@@ -75,5 +77,17 @@ public class GameService {
         } else {
             throw new DataAccessException("Invalid team color.");
         }
+    }
+
+    public Collection<GameData> getAllGames(String authToken) throws DataAccessException {
+        if (authDAO.getUser(authToken) == null) {
+            throw new DataAccessException("Invalid token.");
+        } else {
+            return gameDAO.getAllGames(); // fix me
+        }
+    }
+
+    public void clear() throws DataAccessException {
+        gameDAO.clear();
     }
 }

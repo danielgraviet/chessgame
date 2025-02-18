@@ -9,6 +9,9 @@ import model.users.UserData;
 import spark.Request;
 import spark.Response;
 import service.UserService;
+
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import chess.ChessGame;
@@ -124,6 +127,26 @@ public class GameHandler {
             res.status(500);
             return createErrorResponse("Error: " + e.getMessage());
         }
+    }
+
+    public Object listGames(Request req, Response res) {
+        try {
+            // make sure there is a valid auth token.
+            String authToken = req.headers("Authorization");
+            if (authToken == null || authToken.isEmpty()) {
+                res.status(400);
+                return createErrorResponse("Invalid authorization.");
+            }
+
+            var games = gameService.getAllGames(authToken);
+            Map<String, Object> response = new HashMap<>();
+            response.put("games", games);
+            res.status(200);
+            return new Gson().toJson(response);
+        } catch (Exception e) {
+            res.status(500);
+        }
+        return new ArrayList<>();
     }
 
     private String createErrorResponse(String error) {

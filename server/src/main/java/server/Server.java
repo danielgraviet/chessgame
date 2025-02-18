@@ -50,6 +50,7 @@ public class Server {
         // games
         Spark.post("/game", gameServer::createGame);
         Spark.put("/game", gameServer::joinGame);
+        Spark.get("/game", gameServer::listGames);
 
 
         Spark.awaitInitialization();
@@ -62,6 +63,7 @@ public class Server {
     }
 
     private Object clear(Request req, Response res) throws DataAccessException {
+        // issue resolved, I was clearing auth and users, not the game storage. caused leaks. dg/2.17
         clearDatabase();
         res.status(200);
         return "{}";
@@ -69,5 +71,6 @@ public class Server {
 
     public void clearDatabase() throws DataAccessException {
         userService.clear();
+        gameService.clear();
     }
 }
