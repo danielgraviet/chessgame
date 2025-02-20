@@ -1,11 +1,16 @@
 package service;
+import chess.ChessGame;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.UserDAO;
+import dataaccess.GameDAO;
 import model.auth.AuthData;
+import model.game.GameData;
 import org.junit.jupiter.api.*;
 import model.users.UserData;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -17,8 +22,9 @@ public class ServiceUnitTests {
      * figure out after all, and before all.
      *  */
 
-
     private static UserService userService;
+    private static GameService gameService;
+    private static GameDAOUnitTest gameDAOTest;
     private static UserDAOUnitTest userDAOTest;
     private static AuthDAOUnitTest authDAOTest;
     private static UserData existingUser;
@@ -32,6 +38,8 @@ public class ServiceUnitTests {
         existingUser = new UserData("ExistingUser", "ExistingPassword", "existingUser@gmail.com");
         userDAOTest = new UserDAOUnitTest();
         authDAOTest = new AuthDAOUnitTest();
+        gameDAOTest = new GameDAOUnitTest();
+        gameService = new GameService(gameDAOTest,authDAOTest);
         userService = new UserService(userDAOTest, authDAOTest);
     }
 
@@ -41,7 +49,7 @@ public class ServiceUnitTests {
         // I want to clear the all the storage.
         userDAOTest.clear();
         authDAOTest.clear();
-
+        gameDAOTest.clear();
 
         // then add 1 the existingUser.
         userDAOTest.insertUser(existingUser);
@@ -64,11 +72,9 @@ public class ServiceUnitTests {
     @Test
     @Order(2)
     @DisplayName("Invalid User Register")
-    public void InvalidUserRegister() throws DataAccessException {
+    public void InvalidUserRegister() {
         // existing user is already in db, now trying to register again.
-        assertThrows(DataAccessException.class, () -> {
-            userService.register(existingUser);
-        }, "Should throw DataAccessException for duplicate user");
+        assertThrows(DataAccessException.class, () -> userService.register(existingUser), "Should throw DataAccessException for duplicate user");
     }
 
 
@@ -89,11 +95,9 @@ public class ServiceUnitTests {
     @Test
     @Order(4)
     @DisplayName("Invalid User Login")
-    public void invalidUserLogin() throws DataAccessException {
+    public void invalidUserLogin() {
         // login to an account that does not exist.
-        assertThrows(DataAccessException.class, () -> {
-            userService.login(newUser);
-        }, "Should throw DataAccessException for invalid user");
+        assertThrows(DataAccessException.class, () -> userService.login(newUser), "Should throw DataAccessException for invalid user");
     }
 
 
@@ -162,6 +166,169 @@ public class ServiceUnitTests {
         assertNull(userDAOTest.getUser(newUser.username()), "UserDAO should be empty.");
         assertNull(authDAOTest.getUser("anyToken"), "AuthDAO should be empty.");
     }
+
+
+    @Test
+    @Order(9)
+    @DisplayName("Valid create game")
+    public void validCreateGame() throws DataAccessException {
+        // first get a token to create a game.
+        AuthData authData = userService.login(existingUser);
+        String authToken = authData.authToken();
+
+        int gameID = gameService.createGame(authToken, "TestGame");
+        assertTrue(gameID > 0, "Game ID should be greater than 0");
+    }
+
+    @Test
+    @Order(10)
+    @DisplayName("Invalid create game - Duplicate Game")
+    public void invalidCreateGame() throws DataAccessException {
+        // first get a token to create a game.
+        AuthData authData = userService.login(existingUser);
+        String authToken = authData.authToken();
+
+        int gameID = gameService.createGame(authToken, "TestGame");
+        assertTrue(gameID > 0, "Game ID should be greater than 0");
+
+        assertThrows(DataAccessException.class, () -> gameService.createGame(authToken, "TestGame"), "Should throw DataAccessException for duplicate game name");
+    }
+
+    @Test
+    @Order(11)
+    @DisplayName("Valid join game")
+    public void validJoinGame() throws DataAccessException {
+        // first get a token to create a game.
+        AuthData authData = userService.login(existingUser);
+        String authToken = authData.authToken();
+
+        int gameID = gameService.createGame(authToken, "TestGame");
+        assertTrue(gameID > 0, "Game ID should be greater than 0");
+
+        // join that game with another user
+        userService.register(newUser);
+        AuthData newAuthData = userService.login(newUser);
+        String newAuthToken = newAuthData.authToken();
+
+        // auth token, int gameID, teamColor
+        gameService.joinGame(newAuthToken, gameID, ChessGame.TeamColor.BLACK);
+        GameData game = gameDAOTest.getGameByID(gameID);
+        assertNotNull(game, "game should exist.");
+        assertEquals(newUser.username(), game.blackUsername(), "black username should be newUser");
+        assertNull(game.whiteUsername(), "white username should still be null");
+    }
+
+    @Test
+    @Order(12)
+    @DisplayName("Invalid join game - Duplicate team color")
+    public void invalidJoinGame() throws DataAccessException {
+        // first get a token to create a game.
+        AuthData authData = userService.login(existingUser);
+        String authToken = authData.authToken();
+
+        int gameID = gameService.createGame(authToken, "TestGame");
+        assertTrue(gameID > 0, "Game ID should be greater than 0");
+
+        // join that game with another user
+        userService.register(newUser);
+        AuthData newAuthData = userService.login(newUser);
+        String newAuthToken = newAuthData.authToken();
+
+        // auth token, int gameID, teamColor
+        gameService.joinGame(newAuthToken, gameID, ChessGame.TeamColor.BLACK);
+
+        // try to add another black player
+        assertThrows(DataAccessException.class, () -> gameService.joinGame(newAuthToken, gameID, ChessGame.TeamColor.BLACK), "Should throw DataAccessException for two black users.");
+    }
+
+    @Test
+    @Order(13)
+    @DisplayName("Valid get all games")
+    public void validGetAllGames() throws DataAccessException {
+        // first get a token to create a game.
+        AuthData authData = userService.login(existingUser);
+        String authToken = authData.authToken();
+
+        int gameID = gameService.createGame(authToken, "TestGame");
+        int gameID2 = gameService.createGame(authToken, "TestGame2");
+        int gameID3 = gameService.createGame(authToken, "TestGame3");
+        assertTrue(gameID > 0, "Game ID 1 should be greater than 0");
+        assertTrue(gameID2 > 0, "Game ID 2 should be greater than 0");
+        assertTrue(gameID3 > 0, "Game ID 3 should be greater than 0");
+
+        Collection<GameData> games = gameService.getAllGames(authToken);
+
+        assertNotNull(games, "games should not be null");
+        assertFalse(games.isEmpty(), "games should not be empty");
+
+        Set<String> gameNames = new HashSet<>();
+        Set<Integer> gameIDs = new HashSet<>();
+        for (GameData game : games) {
+            gameNames.add(game.gameName());
+            gameIDs.add(game.gameID());
+        }
+        assertTrue(gameNames.contains("TestGame"), "Should contain TestGame");
+        assertTrue(gameNames.contains("TestGame2"), "Should contain TestGame2");
+        assertTrue(gameNames.contains("TestGame3"), "Should contain TestGame3");
+        assertTrue(gameIDs.contains(gameID), "Should contain game ID 1");
+        assertTrue(gameIDs.contains(gameID2), "Should contain game ID 2");
+        assertTrue(gameIDs.contains(gameID3), "Should contain game ID 3");
+    }
+
+    @Test
+    @Order(14)
+    @DisplayName("invalid get all games - bad token")
+    public void invalidGetAllGames() {
+       assertThrows(DataAccessException.class, () -> gameService.getAllGames(null), "Should throw DataAccessException for bad token");
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("valid clear games")
+    public void validClearGames() throws DataAccessException {
+        // first get a token to create a game.
+        AuthData authData = userService.login(existingUser);
+        String authToken = authData.authToken();
+
+        int gameID = gameService.createGame(authToken, "TestGame");
+        int gameID2 = gameService.createGame(authToken, "TestGame2");
+        int gameID3 = gameService.createGame(authToken, "TestGame3");
+        assertTrue(gameID > 0, "Game ID 1 should be greater than 0");
+        assertTrue(gameID2 > 0, "Game ID 2 should be greater than 0");
+        assertTrue(gameID3 > 0, "Game ID 3 should be greater than 0");
+
+        Collection<GameData> games = gameService.getAllGames(authToken);
+
+        // make sure games are being created.
+        assertNotNull(games, "games should not be null");
+        assertFalse(games.isEmpty(), "games should not be empty");
+
+        // clear games
+        gameService.clear();
+
+        assertTrue(games.isEmpty(), "games should be empty");
+    }
+
+    @Test
+    @Order(16)
+    @DisplayName("invalid clear games - already empty")
+    public void invalidClearGames() throws DataAccessException {
+        // first get a token to create a game.
+        AuthData authData = userService.login(existingUser);
+        String authToken = authData.authToken();
+
+        Collection<GameData> games = gameService.getAllGames(authToken);
+        gameService.clear();
+
+        assertTrue(games.isEmpty(), "games should be empty");
+
+        // clear games again & verify still empty
+        gameService.clear();
+        assertTrue(games.isEmpty(), "games should remain empty");
+    }
+
+
+
 
 
 
@@ -244,7 +411,7 @@ public class ServiceUnitTests {
 
 
         @Override
-        public boolean removeAuthData(String token) throws DataAccessException {
+        public boolean removeAuthData(String token) {
             return authDataMap.remove(token) != null;
         }
 
@@ -252,6 +419,69 @@ public class ServiceUnitTests {
         @Override
         public void clear() {
             authDataMap.clear();
+        }
+    }
+
+    private static class GameDAOUnitTest implements GameDAO {
+
+        private final HashSet<GameData> gameStorage = new HashSet<>();
+        private static final AtomicInteger nextGameID = new AtomicInteger(1);
+
+        @Override
+        public int createGame(String authToken, String gameName) throws DataAccessException {
+
+            if (!gameStorage.isEmpty()) {
+                for (GameData gameData : gameStorage) {
+                    if (gameData.gameName().equals(gameName)) {
+                        throw new DataAccessException("Game name already exists");
+                    }
+                }
+            }
+
+            int gameID = nextGameID.getAndIncrement();
+
+            // enter names for white and black user
+            String blackUsername = null;
+            String whiteUsername = null;
+
+            // pass in and set the game name,
+
+            // create a new chessGame Object.
+            ChessGame chessGame = new ChessGame();
+            GameData game = new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame);
+            gameStorage.add(game);
+            return gameID;
+        }
+
+        @Override
+        public GameData getGameByID(int gameID) throws DataAccessException {
+            for (GameData game: gameStorage) {
+                if (game.gameID() == gameID) {
+                    return game;
+                }
+            }
+            throw new DataAccessException("Game not found");
+        }
+
+        @Override
+        public void updateGame(GameData gameData) throws DataAccessException {
+            boolean removed = gameStorage.removeIf(game -> game.gameID() == gameData.gameID());
+            if (removed) {
+                gameStorage.add(gameData);
+            } else {
+                throw new DataAccessException("Game not found for update.");
+            }
+        }
+
+        @Override
+        public Collection<GameData> getAllGames() {
+            return gameStorage;
+        }
+
+        @Override
+        public void clear() {
+            gameStorage.clear();
+            nextGameID.set(1);
         }
     }
 }

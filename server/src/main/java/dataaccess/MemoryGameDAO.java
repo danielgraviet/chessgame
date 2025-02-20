@@ -19,6 +19,14 @@ public class MemoryGameDAO implements GameDAO {
     public int createGame(String authToken, String gameName) throws DataAccessException {
         // game data requires ID, str white user, str black user, str gameName, ChessGame game object
         // generate a unique ID
+        if (!gameStorage.isEmpty()) {
+            for (GameData gameData : gameStorage) {
+                if (gameData.gameName().equals(gameName)) {
+                    throw new DataAccessException("Game name already exists");
+                }
+            }
+        }
+
         int gameID = nextGameID.getAndIncrement();
 
         // enter names for white and black user
