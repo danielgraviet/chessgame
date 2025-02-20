@@ -16,12 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ServiceUnitTests {
-    /* TODO
-     *  figure out what variables I need to do testing
-     * initialize them
-     * figure out after all, and before all.
-     *  */
-
     private static UserService userService;
     private static GameService gameService;
     private static GameDAOUnitTest gameDAOTest;
@@ -72,7 +66,7 @@ public class ServiceUnitTests {
     @Test
     @Order(2)
     @DisplayName("Invalid User Register")
-    public void InvalidUserRegister() {
+    public void invalidUserRegister() {
         // existing user is already in db, now trying to register again.
         assertThrows(DataAccessException.class, () -> userService.register(existingUser), "Should throw DataAccessException for duplicate user");
     }
@@ -191,7 +185,9 @@ public class ServiceUnitTests {
         int gameID = gameService.createGame(authToken, "TestGame");
         assertTrue(gameID > 0, "Game ID should be greater than 0");
 
-        assertThrows(DataAccessException.class, () -> gameService.createGame(authToken, "TestGame"), "Should throw DataAccessException for duplicate game name");
+        assertThrows(DataAccessException.class,
+                () -> gameService.createGame(authToken, "TestGame"),
+                "Should throw DataAccessException for duplicate game name");
     }
 
     @Test
@@ -238,7 +234,9 @@ public class ServiceUnitTests {
         gameService.joinGame(newAuthToken, gameID, ChessGame.TeamColor.BLACK);
 
         // try to add another black player
-        assertThrows(DataAccessException.class, () -> gameService.joinGame(newAuthToken, gameID, ChessGame.TeamColor.BLACK), "Should throw DataAccessException for two black users.");
+        assertThrows(DataAccessException.class,
+                () -> gameService.joinGame(newAuthToken, gameID, ChessGame.TeamColor.BLACK),
+                "Should throw DataAccessException for two black users.");
     }
 
     @Test
@@ -362,20 +360,6 @@ public class ServiceUnitTests {
         }
 
 
-        // these aren't being used, so eventually remove them.
-        @Override
-        public void updateUser (UserData user) {
-            UserStorageUnitTest.remove(user);
-        }
-
-
-        // these aren't being used, so eventually remove them.
-        @Override
-        public void deleteUser (UserData user) {
-            UserStorageUnitTest.remove(user);
-        }
-
-
         @Override
         public void clear() {
             UserStorageUnitTest.clear();
@@ -387,16 +371,6 @@ public class ServiceUnitTests {
 
     private static class AuthDAOUnitTest implements AuthDAO {
         private final Map<String, AuthData> authDataMap = new HashMap<>();
-
-
-        @Override
-        public AuthData getAuthData(String username, String password) throws DataAccessException{
-            if (!authDataMap.containsKey(username)) {
-                throw new DataAccessException("User not found");
-            }
-            return authDataMap.get(username);
-        }
-
 
         @Override
         public AuthData getUser(String token) {
@@ -424,21 +398,21 @@ public class ServiceUnitTests {
 
     private static class GameDAOUnitTest implements GameDAO {
 
-        private final HashSet<GameData> gameStorage = new HashSet<>();
-        private static final AtomicInteger nextGameID = new AtomicInteger(1);
+        private final HashSet<GameData> gameStorageTest = new HashSet<>();
+        private static final AtomicInteger NextGameID = new AtomicInteger(1);
 
         @Override
         public int createGame(String authToken, String gameName) throws DataAccessException {
 
-            if (!gameStorage.isEmpty()) {
-                for (GameData gameData : gameStorage) {
+            if (!gameStorageTest.isEmpty()) {
+                for (GameData gameData : gameStorageTest) {
                     if (gameData.gameName().equals(gameName)) {
                         throw new DataAccessException("Game name already exists");
                     }
                 }
             }
 
-            int gameID = nextGameID.getAndIncrement();
+            int gameID = NextGameID.getAndIncrement();
 
             // enter names for white and black user
             String blackUsername = null;
@@ -449,13 +423,13 @@ public class ServiceUnitTests {
             // create a new chessGame Object.
             ChessGame chessGame = new ChessGame();
             GameData game = new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame);
-            gameStorage.add(game);
+            gameStorageTest.add(game);
             return gameID;
         }
 
         @Override
         public GameData getGameByID(int gameID) throws DataAccessException {
-            for (GameData game: gameStorage) {
+            for (GameData game: gameStorageTest) {
                 if (game.gameID() == gameID) {
                     return game;
                 }
@@ -465,9 +439,9 @@ public class ServiceUnitTests {
 
         @Override
         public void updateGame(GameData gameData) throws DataAccessException {
-            boolean removed = gameStorage.removeIf(game -> game.gameID() == gameData.gameID());
+            boolean removed = gameStorageTest.removeIf(game -> game.gameID() == gameData.gameID());
             if (removed) {
-                gameStorage.add(gameData);
+                gameStorageTest.add(gameData);
             } else {
                 throw new DataAccessException("Game not found for update.");
             }
@@ -475,13 +449,13 @@ public class ServiceUnitTests {
 
         @Override
         public Collection<GameData> getAllGames() {
-            return gameStorage;
+            return gameStorageTest;
         }
 
         @Override
         public void clear() {
-            gameStorage.clear();
-            nextGameID.set(1);
+            gameStorageTest.clear();
+            NextGameID.set(1);
         }
     }
 }

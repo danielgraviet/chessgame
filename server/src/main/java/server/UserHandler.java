@@ -28,7 +28,10 @@ public class UserHandler {
             return new Gson().toJson(authData);
         } catch (DataAccessException e){
             System.out.println("Login failed: " + e.getMessage());
-            if (e.getMessage().contains("Username and password do not match.") || e.getMessage().contains("User not found.") || e.getMessage().contains("User Authentication Failed.") || e.getMessage().contains("Invalid password.")) {
+            if (e.getMessage().contains("Username and password do not match.")
+                    || e.getMessage().contains("User not found.")
+                    || e.getMessage().contains("User Authentication Failed.")
+                    || e.getMessage().contains("Invalid password.")) {
                 res.status(401);
                 return createErrorResponse("Error: unauthorized");
             } else {

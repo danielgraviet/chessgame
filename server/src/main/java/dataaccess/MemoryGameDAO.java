@@ -2,9 +2,7 @@ package dataaccess;
 
 import chess.ChessGame;
 import model.game.GameData;
-import dataaccess.MemoryAuthDAO;
 import java.util.HashSet;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Collection;
 
@@ -13,7 +11,7 @@ public class MemoryGameDAO implements GameDAO {
 
     // DAOs should only CRUD
     private final HashSet<GameData> gameStorage = new HashSet<>();
-    private static final AtomicInteger nextGameID = new AtomicInteger(1);
+    private static final AtomicInteger NextGameID = new AtomicInteger(1);
 
     // CREATE
     public int createGame(String authToken, String gameName) throws DataAccessException {
@@ -27,7 +25,7 @@ public class MemoryGameDAO implements GameDAO {
             }
         }
 
-        int gameID = nextGameID.getAndIncrement();
+        int gameID = NextGameID.getAndIncrement();
 
         // enter names for white and black user
         String blackUsername = null;
@@ -40,16 +38,6 @@ public class MemoryGameDAO implements GameDAO {
         GameData game = new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame);
         gameStorage.add(game);
         return gameID;
-    }
-
-    // READ
-    public int getGame(String authToken, String gameName) throws DataAccessException {
-        for (GameData game: gameStorage) {
-            if (game.gameName().equals(gameName)) {
-                return game.gameID();
-            }
-        }
-        throw new DataAccessException("Game not found");
     }
 
     public GameData getGameByID(int gameID) throws DataAccessException {
@@ -71,22 +59,13 @@ public class MemoryGameDAO implements GameDAO {
         }
     }
 
-    /* TODO:
-    * implement the getAllGames function inside the gameService.java
-    * how does can it use the DAO's to do that?
-    * will it return a collection of GameData objects?
-    * do I need to make a function in this file, to return the GameData objects
-    * */
-
-    public Collection<GameData> getAllGames() throws DataAccessException {
+    public Collection<GameData> getAllGames() {
         return gameStorage;
     }
-    // DELETE
 
     // CLEAR
     public void clear() throws DataAccessException {
         gameStorage.clear();
-        nextGameID.set(1);
+        NextGameID.set(1);
     }
-
 }
