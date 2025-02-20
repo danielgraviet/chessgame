@@ -3,12 +3,12 @@ import model.auth.AuthData;
 import java.util.HashSet;
 
 public class MemoryAuthDAO implements AuthDAO {
-    public HashSet<AuthData> AuthStorage = new HashSet<>();
+    public HashSet<AuthData> authStorage = new HashSet<>();
 
     // CREATE
     public void addAuthData(AuthData authData) throws DataAccessException {
-        if (!AuthStorage.contains(authData)) {
-            AuthStorage.add(authData);
+        if (!authStorage.contains(authData)) {
+            authStorage.add(authData);
         } else {
             throw new DataAccessException("User already exists");
         }
@@ -16,9 +16,9 @@ public class MemoryAuthDAO implements AuthDAO {
     // DELETE
     public boolean removeAuthData(String token) throws DataAccessException {
         // this is checking if the token is in the storage, and removing if it is.
-        for (AuthData authData : AuthStorage) {
+        for (AuthData authData : authStorage) {
             if (authData.authToken().equals(token)) {
-                AuthStorage.remove(authData);
+                authStorage.remove(authData);
                 // this means it has successfully found and removed the token.
                 return true;
             }
@@ -28,16 +28,16 @@ public class MemoryAuthDAO implements AuthDAO {
 
     public AuthData getUser(String token) {
         // notes on stream
-        // .stream() converts AuthStorage hashmap into a stream. streams are good for applying functional operations on objects
+        // .stream() converts authStorage hashmap into a stream. streams are good for applying functional operations on objects
         // filter method then will process each element in stream.
         // the lambda function describes what the filter should do, and how it should equal the token.
         // finds first match, or returns a null.
         // think of a list comprehension in python.
-        return AuthStorage.stream().filter(authData -> authData.authToken().equals(token)).findFirst().orElse(null);
+        return authStorage.stream().filter(authData -> authData.authToken().equals(token)).findFirst().orElse(null);
     }
 
     public void clear() throws DataAccessException {
-        AuthStorage.clear();
+        authStorage.clear();
     }
 
 }

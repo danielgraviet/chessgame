@@ -345,24 +345,24 @@ public class ServiceUnitTests {
 
     // setup stuff for local storage.
     private static class UserDAOUnitTest implements UserDAO {
-        private final HashSet<UserData> UserStorageUnitTest = new HashSet<>();
+        private final HashSet<UserData> userStorageUnitTest = new HashSet<>();
 
 
         @Override
         public void insertUser (UserData user) {
-            UserStorageUnitTest.add(user);
+            userStorageUnitTest.add(user);
         }
 
 
         @Override
         public UserData getUser(String username) {
-            return UserStorageUnitTest.stream().filter(user -> user.username().equals(username)).findFirst().orElse(null);
+            return userStorageUnitTest.stream().filter(user -> user.username().equals(username)).findFirst().orElse(null);
         }
 
 
         @Override
         public void clear() {
-            UserStorageUnitTest.clear();
+            userStorageUnitTest.clear();
         }
 
 
@@ -399,7 +399,7 @@ public class ServiceUnitTests {
     private static class GameDAOUnitTest implements GameDAO {
 
         private final HashSet<GameData> gameStorageTest = new HashSet<>();
-        private static final AtomicInteger NextGameID = new AtomicInteger(1);
+        private static final AtomicInteger NextGameId = new AtomicInteger(1);
 
         @Override
         public int createGame(String authToken, String gameName) throws DataAccessException {
@@ -412,7 +412,7 @@ public class ServiceUnitTests {
                 }
             }
 
-            int gameID = NextGameID.getAndIncrement();
+            int gameID = NextGameId.getAndIncrement();
 
             // enter names for white and black user
             String blackUsername = null;
@@ -455,7 +455,7 @@ public class ServiceUnitTests {
         @Override
         public void clear() {
             gameStorageTest.clear();
-            NextGameID.set(1);
+            NextGameId.set(1);
         }
     }
 }

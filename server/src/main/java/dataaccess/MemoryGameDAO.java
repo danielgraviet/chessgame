@@ -11,7 +11,7 @@ public class MemoryGameDAO implements GameDAO {
 
     // DAOs should only CRUD
     private final HashSet<GameData> gameStorage = new HashSet<>();
-    private static final AtomicInteger NextGameID = new AtomicInteger(1);
+    private static final AtomicInteger NextGameId = new AtomicInteger(1);
 
     // CREATE
     public int createGame(String authToken, String gameName) throws DataAccessException {
@@ -25,7 +25,7 @@ public class MemoryGameDAO implements GameDAO {
             }
         }
 
-        int gameID = NextGameID.getAndIncrement();
+        int gameID = NextGameId.getAndIncrement();
 
         // enter names for white and black user
         String blackUsername = null;
@@ -66,6 +66,6 @@ public class MemoryGameDAO implements GameDAO {
     // CLEAR
     public void clear() throws DataAccessException {
         gameStorage.clear();
-        NextGameID.set(1);
+        NextGameId.set(1);
     }
 }
