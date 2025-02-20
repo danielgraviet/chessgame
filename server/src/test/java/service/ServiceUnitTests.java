@@ -399,7 +399,7 @@ public class ServiceUnitTests {
     private static class GameDAOUnitTest implements GameDAO {
 
         private final HashSet<GameData> gameStorageTest = new HashSet<>();
-        private static final AtomicInteger NextGameId = new AtomicInteger(1);
+        private static final AtomicInteger NEXT_GAME_ID = new AtomicInteger(1);
 
         @Override
         public int createGame(String authToken, String gameName) throws DataAccessException {
@@ -412,7 +412,7 @@ public class ServiceUnitTests {
                 }
             }
 
-            int gameID = NextGameId.getAndIncrement();
+            int gameID = NEXT_GAME_ID.getAndIncrement();
 
             // enter names for white and black user
             String blackUsername = null;
@@ -455,7 +455,7 @@ public class ServiceUnitTests {
         @Override
         public void clear() {
             gameStorageTest.clear();
-            NextGameId.set(1);
+            NEXT_GAME_ID.set(1);
         }
     }
 }
