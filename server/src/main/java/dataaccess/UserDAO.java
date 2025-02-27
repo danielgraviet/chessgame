@@ -1,10 +1,6 @@
 package dataaccess;
 
 import model.users.UserData;
-import org.w3c.dom.CDATASection;
-
-import java.util.Collection;
-
 
 public interface UserDAO {
     void insertUser(UserData user) throws DataAccessException;

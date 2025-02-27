@@ -6,6 +6,7 @@ import dataaccess.UserDAO;
 import dataaccess.GameDAO;
 import model.auth.AuthData;
 import model.game.GameData;
+import org.eclipse.jetty.server.Authentication;
 import org.junit.jupiter.api.*;
 import model.users.UserData;
 import java.util.*;
@@ -59,6 +60,7 @@ public class ServiceUnitTests {
 
         assertNotNull(authData, "AuthData should not be null");
         assertNotNull(authData.authToken(), "Auth token should not be null");
+        assertFalse(authData.authToken().isEmpty(), "Auth token should not be empty");
         assertEquals(newUser.username(), authData.username(), "Usernames should match");
     }
 
@@ -325,24 +327,6 @@ public class ServiceUnitTests {
         assertTrue(games.isEmpty(), "games should remain empty");
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // setup stuff for local storage.
     private static class UserDAOUnitTest implements UserDAO {
         private final HashSet<UserData> userStorageUnitTest = new HashSet<>();
@@ -367,7 +351,6 @@ public class ServiceUnitTests {
 
 
     }
-
 
     private static class AuthDAOUnitTest implements AuthDAO {
         private final Map<String, AuthData> authDataMap = new HashMap<>();
