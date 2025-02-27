@@ -13,9 +13,8 @@ public class Server {
     UserHandler userServer;
     GameHandler gameServer;
 
-
-    static UserService userService;
-    static GameService gameService;
+    UserService userService;
+    GameService gameService;
 
     UserDAO userDAO;
     AuthDAO authDAO;
@@ -23,14 +22,23 @@ public class Server {
 
     public Server() {
         // this makes all the new objects to store users, auth tokens, and games.
-        this.userDAO = new MemoryUserDAO();
+        try {
+            DatabaseManager.createDatabase();
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Failed to create database: " + e.getMessage());
+        }
+
+        //this.userDAO = new MemoryUserDAO(); uncomment if necessary.
         this.authDAO = new MemoryAuthDAO();
         this.gameDAO = new MemoryGameDAO();
 
+        // this implements the sql database
+        this.userDAO = new SqlUserDAO();
+
         userService = new UserService(userDAO, authDAO);
 
-        gameServer = new GameHandler(gameService);
         gameService = new GameService(gameDAO, authDAO);
+        gameServer = new GameHandler(gameService);
 
         this.userServer = new UserHandler(userService);
         this.gameServer = new GameHandler(gameService);
