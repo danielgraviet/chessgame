@@ -46,6 +46,7 @@ public class DatabaseTests {
     @Order(1)
     public void persistenceTest() {
         int initialRowCount = getDatabaseRows();
+        System.out.println("Initial rows: " + initialRowCount);
 
         TestAuthResult regResult = serverFacade.register(TEST_USER);
         String auth = regResult.getAuthToken();
@@ -56,6 +57,8 @@ public class DatabaseTests {
 
         //join the game
         serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.getGameID()), auth);
+        int newRowCount = getDatabaseRows();
+        System.out.println("New rows: " + newRowCount);
 
         Assertions.assertTrue(initialRowCount < getDatabaseRows(), "No new data added to database");
 

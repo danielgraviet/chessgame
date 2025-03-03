@@ -28,12 +28,14 @@ public class Server {
             throw new RuntimeException("Failed to create database: " + e.getMessage());
         }
 
-        //this.userDAO = new MemoryUserDAO(); uncomment if necessary.
-        this.authDAO = new MemoryAuthDAO();
-        this.gameDAO = new MemoryGameDAO();
+        //this.userDAO = new MemoryUserDAO(); uncomment to pass standard api tests
+//        this.authDAO = new MemoryAuthDAO();
+//        this.gameDAO = new MemoryGameDAO();
 
         // this implements the sql database
         this.userDAO = new SqlUserDAO();
+        this.authDAO = new SqlAuthDAO();
+        this.gameDAO = new SqlGameDAO();
 
         userService = new UserService(userDAO, authDAO);
 

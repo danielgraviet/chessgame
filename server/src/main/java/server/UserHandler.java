@@ -50,8 +50,6 @@ public class UserHandler {
             String authData = req.headers("Authorization");
             System.out.println(authData);
 
-            // study headers,
-            //
             userService.logout(authData);
             res.status(200);
             return new Gson().toJson(new EmptyResponse());

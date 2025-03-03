@@ -49,6 +49,41 @@ public class DatabaseManager {
             try (var preparedStatement = conn.prepareStatement(statement)) {
                 preparedStatement.executeUpdate();
             }
+
+            // selects the database before adding tables.
+            conn.setCatalog(DATABASE_NAME);
+
+            // creates the user table
+            var createUsersTable = "CREATE TABLE IF NOT EXISTS users (" +
+                    "username VARCHAR(255) PRIMARY KEY, " +
+                    "password VARCHAR(255) NOT NULL, " +
+                    "EMAIL VARCHAR(255) NOT NULL)";
+
+            try (var preparedStatement2 = conn.prepareStatement(createUsersTable)) {
+                preparedStatement2.executeUpdate();
+            }
+
+            // creates the game table.
+            var createGamesTable = "CREATE TABLE IF NOT EXISTS games (" +
+                    "game_id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "game_name VARCHAR(255) NOT NULL, " +
+                    "white_username VARCHAR(255), " +
+                    "black_username VARCHAR(255), " +
+                    "game_data TEXT)";
+
+            try (var preparedStatement3 = conn.prepareStatement(createGamesTable)) {
+                preparedStatement3.executeUpdate();
+            }
+
+            // creates the auth table
+            var createAuthTable = "CREATE TABLE IF NOT EXISTS auth_tokens (" +
+                    "auth_token VARCHAR(255) PRIMARY KEY, " +
+                    "username VARCHAR(255) NOT NULL)";
+
+            try (var preparedStatement4 = conn.prepareStatement(createAuthTable)) {
+                preparedStatement4.executeUpdate();
+            }
+
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
