@@ -14,9 +14,6 @@ public class SqlUserDAO implements UserDAO {
     private static final Logger log = LoggerFactory.getLogger(SqlUserDAO.class);
 
     public void insertUser(UserData user) throws DataAccessException {
-        // TODO
-        // hash the password to pass the bycrypt stuff.
-
         String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
         try (Connection connection = DatabaseManager.getConnection(); PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, user.username());
