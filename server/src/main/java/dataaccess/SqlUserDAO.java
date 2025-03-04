@@ -1,6 +1,7 @@
 package dataaccess;
 
 import model.users.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,10 +14,16 @@ public class SqlUserDAO implements UserDAO {
     private static final Logger log = LoggerFactory.getLogger(SqlUserDAO.class);
 
     public void insertUser(UserData user) throws DataAccessException {
+        // TODO
+        // hash the password to pass the bycrypt stuff.
+
         String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
         try (Connection connection = DatabaseManager.getConnection(); PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, user.username());
-            stmt.setString(2, user.password()); // apply hashing after.
+
+            String hashPassword = BCrypt.hashpw(user.password(), BCrypt.gensalt());
+
+            stmt.setString(2, hashPassword);
             stmt.setString(3, user.email());
             System.out.println("Inserting user: " + user);
             stmt.executeUpdate();
@@ -31,7 +38,13 @@ public class SqlUserDAO implements UserDAO {
     }
 
     public void clear() throws DataAccessException {
-
+        String sql = "TRUNCATE TABLE users";
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.executeUpdate();
+            System.out.println("Clear Successful.");
+        } catch (SQLException e) {
+            log.error("Failed to clear user table" + e.getMessage());
+            throw new DataAccessException(e.getMessage());
+        }
     }
-
 }
