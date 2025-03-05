@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public class SqlGameDAO implements GameDAO {
 
-    private static final Gson gson = new Gson();
+    private static final Gson GSON = new Gson();
 
     public int createGame(String authToken, String gameName) throws DataAccessException {
         ChessGame chessGame = new ChessGame();
@@ -22,7 +22,7 @@ public class SqlGameDAO implements GameDAO {
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, gameName);
-            stmt.setString(2, gson.toJson(chessGame));
+            stmt.setString(2, GSON.toJson(chessGame));
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) {
@@ -34,7 +34,7 @@ public class SqlGameDAO implements GameDAO {
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
-    };
+    }
 
     public GameData getGameByID(int gameID) throws DataAccessException {
         String sql = "SELECT game_id, game_name, white_username, black_username, game_data FROM games WHERE game_id = ?";
@@ -44,7 +44,7 @@ public class SqlGameDAO implements GameDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     String gameDataJson = rs.getString("game_data");
-                    ChessGame chessGame = gameDataJson != null ? gson.fromJson(gameDataJson, ChessGame.class) : null;
+                    ChessGame chessGame = gameDataJson != null ? GSON.fromJson(gameDataJson, ChessGame.class) : null;
                     return new GameData(
                             rs.getInt("game_id"),
                             rs.getString("white_username"),
@@ -58,7 +58,7 @@ public class SqlGameDAO implements GameDAO {
         } catch (SQLException e) {
             throw new DataAccessException("Error retrieving game: " + e.getMessage());
         }
-    };
+    }
 
     public void updateGame(GameData gameData) throws DataAccessException {
 
@@ -70,7 +70,7 @@ public class SqlGameDAO implements GameDAO {
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, whiteUsername);
             stmt.setString(2, blackUsername);
-            stmt.setString(3, gameData.game() != null ? gson.toJson(gameData.game()) : null);
+            stmt.setString(3, gameData.game() != null ? GSON.toJson(gameData.game()) : null);
             stmt.setInt(4, gameData.gameID());
             int rowsUpdated = stmt.executeUpdate();
             if (rowsUpdated == 0) {
@@ -79,7 +79,7 @@ public class SqlGameDAO implements GameDAO {
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update game: " + e.getMessage());
         }
-    };
+    }
 
     public Collection<GameData> getAllGames() throws DataAccessException {
         Collection<GameData> games = new ArrayList<>(); // Always initialize, never null
@@ -89,7 +89,7 @@ public class SqlGameDAO implements GameDAO {
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 String gameDataJson = rs.getString("game_data");
-                ChessGame chessGame = gameDataJson != null ? gson.fromJson(gameDataJson, ChessGame.class) : null;
+                ChessGame chessGame = gameDataJson != null ? GSON.fromJson(gameDataJson, ChessGame.class) : null;
                 games.add(new GameData(
                         rs.getInt("game_id"),
                         rs.getString("white_username"),
@@ -102,7 +102,7 @@ public class SqlGameDAO implements GameDAO {
             throw new DataAccessException("Error retrieving games: " + e.getMessage());
         }
         return games;
-    };
+    }
 
     public void clear() throws DataAccessException{
         String sql = "TRUNCATE TABLE games";
@@ -112,11 +112,13 @@ public class SqlGameDAO implements GameDAO {
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
-    };
+    }
 
     private String resolveUsername(String input) throws DataAccessException {
         // If input is null or not a UUID, assume it's a username
-        if (input == null) return null;
+        if (input == null) {
+            return null;
+        }
         try {
             UUID.fromString(input); // Check if it's a UUID
         } catch (IllegalArgumentException e) {

@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 public class SqlUserDAO implements UserDAO {
 
-    private static final Logger log = LoggerFactory.getLogger(SqlUserDAO.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SqlUserDAO.class);
 
     public void insertUser(UserData user) throws DataAccessException {
         String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
@@ -55,7 +55,7 @@ public class SqlUserDAO implements UserDAO {
             stmt.executeUpdate();
             System.out.println("Clear Successful.");
         } catch (SQLException e) {
-            log.error("Failed to clear user table" + e.getMessage());
+            LOG.error("Failed to clear user table" + e.getMessage());
             throw new DataAccessException(e.getMessage());
         }
     }

@@ -15,10 +15,10 @@ public class SqlAuthDAO implements AuthDAO {
             stmt.setString(1, token);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                String auth_token = rs.getString("auth_token");
+                String authToken = rs.getString("auth_token");
                 String username = rs.getString("username");
-                System.out.println("DEBUG/ Found Auth Token for: " + auth_token + " " + username);
-                return new AuthData(auth_token, username);
+                System.out.println("DEBUG/ Found Auth Token for: " + authToken + " " + username);
+                return new AuthData(authToken, username);
             }
             System.out.println("DEBUG/ No Auth Token for: " + token);
             return null;

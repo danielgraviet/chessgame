@@ -36,20 +36,6 @@ public class UserService {
         } else {
             throw new DataAccessException("User not found.");
         }
-//        // this makes sure that a username was returned
-//        if (userDAO.getUser(user.username()) != null) {
-//
-//            // this checks that the passwords match
-//            if (userDAO.getUser(user.username()).password().equals(user.password())) {
-//                AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
-//                authDAO.addAuthData(authData);
-//                return authData;
-//            } else {
-//                throw new DataAccessException("Invalid password.");
-//            }
-//        } else {
-//            throw new DataAccessException("User Authentication Failed.");
-//        }
     }
 
     public AuthData register(UserData user) throws DataAccessException {
