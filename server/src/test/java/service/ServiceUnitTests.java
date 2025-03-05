@@ -9,6 +9,8 @@ import model.game.GameData;
 import org.eclipse.jetty.server.Authentication;
 import org.junit.jupiter.api.*;
 import model.users.UserData;
+import org.mindrot.jbcrypt.BCrypt;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -78,7 +80,7 @@ public class ServiceUnitTests {
     @Order(3)
     @DisplayName("Normal User Login")
     public void normalUserLogin() throws DataAccessException {
-        // create the account.
+        // login the account.
         AuthData authData = userService.login(existingUser);
 
 
@@ -124,12 +126,8 @@ public class ServiceUnitTests {
         // logout and remove token
         userService.logout(authToken);
 
-        // second logout.
-        userService.logout(authToken);
-
-        // Verify the token is still not present in AuthDAO
-        assertNull(authDAOTest.getUser(authToken),
-                "Auth token should remain absent after repeated logout attempts");
+        // second logout should throw an error.
+        assertThrows(DataAccessException.class, () -> userService.logout(authToken), "Should throw DataAccessException for invalid user");
     }
 
     @Test
@@ -334,7 +332,9 @@ public class ServiceUnitTests {
 
         @Override
         public void insertUser (UserData user) {
-            userStorageUnitTest.add(user);
+            String hashedPassword = BCrypt.hashpw(user.password(), BCrypt.gensalt());
+            UserData hashedUser = new UserData(user.username(), hashedPassword, user.email());
+            userStorageUnitTest.add(hashedUser);
         }
 
 
@@ -348,8 +348,6 @@ public class ServiceUnitTests {
         public void clear() {
             userStorageUnitTest.clear();
         }
-
-
     }
 
     private static class AuthDAOUnitTest implements AuthDAO {
