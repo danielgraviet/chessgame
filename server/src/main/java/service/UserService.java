@@ -3,6 +3,7 @@ import com.sun.tools.jconsole.JConsoleContext;
 import dataaccess.*;
 import model.users.UserData;
 import model.auth.AuthData;
+import org.mindrot.jbcrypt.BCrypt;
 import spark.Request;
 import spark.Response;
 
@@ -28,21 +29,32 @@ public class UserService {
 
     // this function should simply return auth data if it is valid username and password.
     public AuthData login(UserData user) throws DataAccessException {
-
-        // this makes sure that a username was returned
-        if (userDAO.getUser(user.username()) != null) {
-
-            // this checks that the passwords match
-            if (userDAO.getUser(user.username()).password().equals(user.password())) {
+        UserData storedUser = userDAO.getUser(user.username());
+        if (storedUser != null) {
+            if (BCrypt.checkpw(user.password(), storedUser.password())) {
                 AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
                 authDAO.addAuthData(authData);
                 return authData;
             } else {
-                throw new DataAccessException("Invalid password.");
+                throw new DataAccessException("Wrong password");
             }
         } else {
-            throw new DataAccessException("User Authentication Failed.");
+            throw new DataAccessException("User not found");
         }
+//        // this makes sure that a username was returned
+//        if (userDAO.getUser(user.username()) != null) {
+//
+//            // this checks that the passwords match
+//            if (userDAO.getUser(user.username()).password().equals(user.password())) {
+//                AuthData authData = new AuthData(user.username(), UUID.randomUUID().toString());
+//                authDAO.addAuthData(authData);
+//                return authData;
+//            } else {
+//                throw new DataAccessException("Invalid password.");
+//            }
+//        } else {
+//            throw new DataAccessException("User Authentication Failed.");
+//        }
     }
 
     public AuthData register(UserData user) throws DataAccessException {

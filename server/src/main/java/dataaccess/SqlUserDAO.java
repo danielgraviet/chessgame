@@ -31,7 +31,22 @@ public class SqlUserDAO implements UserDAO {
 
     }
     public UserData getUser(String username) throws DataAccessException{
-        return null;
+        String sql = "SELECT * FROM users WHERE username = ?";
+        try (Connection connection = DatabaseManager.getConnection(); PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            try (var resultSet = stmt.executeQuery()) {
+                if (resultSet.next()) {
+                    String retrievedUsername = resultSet.getString("username");
+                    String hashedPassword = resultSet.getString("password");
+                    String email = resultSet.getString("email");
+                    return new UserData(retrievedUsername, hashedPassword, email);
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error fetching user: " + e.getMessage());
+        }
     }
 
     public void clear() throws DataAccessException {
