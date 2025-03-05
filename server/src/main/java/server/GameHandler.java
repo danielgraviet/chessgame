@@ -9,7 +9,6 @@ import model.game.CreateGameRequest;
 import spark.Request;
 import spark.Response;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import chess.ChessGame;

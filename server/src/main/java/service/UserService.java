@@ -1,13 +1,8 @@
 package service;
-import com.sun.tools.jconsole.JConsoleContext;
 import dataaccess.*;
 import model.users.UserData;
 import model.auth.AuthData;
 import org.mindrot.jbcrypt.BCrypt;
-import spark.Request;
-import spark.Response;
-
-import javax.xml.crypto.Data;
 import java.util.UUID;
 
 public class UserService {

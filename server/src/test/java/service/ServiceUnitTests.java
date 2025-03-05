@@ -6,7 +6,6 @@ import dataaccess.UserDAO;
 import dataaccess.GameDAO;
 import model.auth.AuthData;
 import model.game.GameData;
-import org.eclipse.jetty.server.Authentication;
 import org.junit.jupiter.api.*;
 import model.users.UserData;
 import org.mindrot.jbcrypt.BCrypt;
