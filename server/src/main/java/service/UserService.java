@@ -36,10 +36,10 @@ public class UserService {
                 authDAO.addAuthData(authData);
                 return authData;
             } else {
-                throw new DataAccessException("Wrong password");
+                throw new DataAccessException("Invalid password.");
             }
         } else {
-            throw new DataAccessException("User not found");
+            throw new DataAccessException("User not found.");
         }
 //        // this makes sure that a username was returned
 //        if (userDAO.getUser(user.username()) != null) {
@@ -72,7 +72,16 @@ public class UserService {
 
     // this is removing the auth token from the db, if it is found.
     public void logout(String token) throws DataAccessException{
-       authDAO.removeAuthData(token);
+        if (token != null) {
+            // this is a boolean
+            if (authDAO.removeAuthData(token)) {
+                System.out.println("Logged out successfully.");
+            } else {
+                throw new DataAccessException("Invalid token.");
+            }
+        } else {
+            throw new DataAccessException("User not found.");
+        }
     }
 
     public void clear() throws DataAccessException {

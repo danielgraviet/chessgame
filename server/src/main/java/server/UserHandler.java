@@ -42,11 +42,7 @@ public class UserHandler {
     }
 
     public Object logout(Request req, Response res) {
-        // not sure if this even works?
-
         try {
-            // questions to ask?
-            // what do I need to logout?
             String authData = req.headers("Authorization");
             System.out.println(authData);
 
@@ -55,10 +51,9 @@ public class UserHandler {
             return new Gson().toJson(new EmptyResponse());
         } catch (DataAccessException e) {
 
-            if (e.getMessage().contains("Invalid AuthToken.")) {
+            if (e.getMessage().contains("User not found.") || e.getMessage().contains("Invalid token.")) {
                 res.status(401);
                 return createErrorResponse("Error: unauthorized");
-
             } else {
                 res.status(500);
                 return createErrorResponse("Error: " + e.getMessage());
