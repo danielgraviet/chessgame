@@ -51,4 +51,21 @@ public class SqlUserDAOTest {
         }
     }
 
+    @Test
+    @Order(3)
+    @DisplayName("Valid Get User")
+    void validGetUser() throws DataAccessException {
+        UserData retrievedUser = userDAO.getUser("ExistingUser");
+        assertNotNull(retrievedUser);
+        assertEquals("ExistingUser",retrievedUser.username());
+    }
+
+    @Test
+    @Order(4)
+    @DisplayName("Invalid Get User")
+    void invalidGetUser() throws DataAccessException {
+        UserData retrievedUser = userDAO.getUser("nonExistingUser");
+        assertNull(retrievedUser);
+    }
+
 }
