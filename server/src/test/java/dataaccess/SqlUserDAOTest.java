@@ -68,4 +68,51 @@ public class SqlUserDAOTest {
         assertNull(retrievedUser);
     }
 
+    @Test
+    @Order(5)
+    @DisplayName("Valid clear")
+    void validClear() throws DataAccessException {
+        // add user to the db
+        UserData newUserData = new UserData("NewUser", UUID.randomUUID().toString(), "new@email.com");
+        userDAO.insertUser(newUserData);
+
+        // confirm it is in db
+        UserData retrievedUser = userDAO.getUser("NewUser");
+        assertNotNull(retrievedUser);
+
+        // clear the db
+        userDAO.clear();
+
+        // confirm it is clear
+        UserData retrievedUser2 = userDAO.getUser("NewUser");
+        assertNull(retrievedUser2);
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("Invalid clear")
+    void invalidClear() throws DataAccessException {
+        // add user to the db
+        UserData newUserData = new UserData("NewUser", UUID.randomUUID().toString(), "new@email.com");
+        userDAO.insertUser(newUserData);
+
+        // confirm it is in db
+        UserData retrievedUser = userDAO.getUser("NewUser");
+        assertNotNull(retrievedUser);
+
+        // clear the db
+        userDAO.clear();
+
+        // confirm it is clear
+        UserData retrievedUser2 = userDAO.getUser("NewUser");
+        assertNull(retrievedUser2);
+
+        // clear the db again
+        userDAO.clear();
+
+        // confirm it is still clear
+        UserData retrievedUser3 = userDAO.getUser("NewUser");
+        assertNull(retrievedUser3);
+    }
+
 }
