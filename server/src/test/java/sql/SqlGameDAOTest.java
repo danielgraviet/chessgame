@@ -46,7 +46,7 @@ public class SqlGameDAOTest {
         String invalidAuthToken = null;
         String gameName = "Test Game";
         try {
-            int gameId = gameDAO.createGame(invalidAuthToken, gameName);
+            gameDAO.createGame(invalidAuthToken, gameName);
         } catch (DataAccessException e) {
             assertTrue(true, "DataAccessException was thrown");
         }
@@ -202,5 +202,68 @@ public class SqlGameDAOTest {
         assertTrue(foundGame3, "Game 3 should be found");
     }
 
+    // get all games test
+    @Test
+    @Order(8)
+    @DisplayName("Invalid get all games")
+    void invalidGetAllGames() throws DataAccessException {
+        Collection<GameData> games = gameDAO.getAllGames();
+        assertTrue(games.isEmpty(), "Games should be empty");
+        assertEquals(0, games.size(), "Game count should be zero");
+    }
+
     // clear test
+    @Test
+    @Order(9)
+    @DisplayName("valid clear")
+    void validClear() throws DataAccessException {
+        // create game 1
+        String game1 = "Game 1";
+        gameDAO.createGame(authToken, game1);
+
+        // create game 1
+        String game2 = "Game 2";
+        gameDAO.createGame(authToken, game2);
+
+        // create game 1
+        String game3 = "Game 3";
+        gameDAO.createGame(authToken, game3);
+
+        // get all the games, and make sure they are there
+        Collection<GameData> games = gameDAO.getAllGames();
+        assertFalse(games.isEmpty(), "Games should not be empty");
+
+        // clear the db
+        games.clear();
+        assertTrue(games.isEmpty(), "Games should be empty");
+    }
+
+    @Test
+    @Order(10)
+    @DisplayName("invalid clear")
+    void invalidClear() throws DataAccessException {
+        // create game 1
+        String game1 = "Game 1";
+        gameDAO.createGame(authToken, game1);
+
+        // create game 1
+        String game2 = "Game 2";
+        gameDAO.createGame(authToken, game2);
+
+        // create game 1
+        String game3 = "Game 3";
+        gameDAO.createGame(authToken, game3);
+
+        // get all the games, and make sure they are there
+        Collection<GameData> games = gameDAO.getAllGames();
+        assertFalse(games.isEmpty(), "Games should not be empty");
+
+        // clear the db
+        games.clear();
+        assertTrue(games.isEmpty(), "Games should be empty");
+
+        // clear the db again and check again
+        games.clear();
+        assertTrue(games.isEmpty(), "Games should be empty");
+    }
 }
