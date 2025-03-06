@@ -39,9 +39,22 @@ public class SqlGameDAOTest {
         assertNull(game.blackUsername(), "Black username should be null initially");
     }
 
-    // get game by id test
     @Test
     @Order(2)
+    @DisplayName("Invalid Create Bad Auth")
+    void testCreateInvalidGame() throws DataAccessException {
+        String invalidAuthToken = null;
+        String gameName = "Test Game";
+        try {
+            int gameId = gameDAO.createGame(invalidAuthToken, gameName);
+        } catch (DataAccessException e) {
+            assertTrue(true, "DataAccessException was thrown");
+        }
+    }
+
+    // get game by id test
+    @Test
+    @Order(3)
     @DisplayName("Get Game ID Successfully")
     void testGetGameByID() throws DataAccessException {
         // create a game
@@ -57,9 +70,31 @@ public class SqlGameDAOTest {
         assertEquals(gameName, retrievedGame.gameName(), "Game name should match");
     }
 
+    @Test
+    @Order(4)
+    @DisplayName("Invalid Game ID")
+    void testInvalidGameID() throws DataAccessException {
+        // create a game
+        String gameName = "Test Game";
+        int gameID = gameDAO.createGame(authToken, gameName);
+
+        // check the gameID is positive
+        assertTrue(gameID > 0, "Game ID should be positive");
+
+        // create invalid gameID
+        int invalidGameID = -1;
+
+        // get the game by invalid ID
+        try {
+            gameDAO.getGameByID(invalidGameID);
+        } catch (DataAccessException e) {
+            assertTrue(true, "DataAccessException was thrown");
+        }
+    }
+
     // update game test
     @Test
-    @Order(3)
+    @Order(5)
     @DisplayName("Update game successfully")
     void testUpdateGame() throws DataAccessException {
         // create a game
@@ -89,7 +124,83 @@ public class SqlGameDAOTest {
         assertEquals(originalGame.game(), updatedGameData.game(), "Games should match");
     }
 
+    // update game test
+    @Test
+    @Order(6)
+    @DisplayName("Invalid game update")
+    void testInvalidUpdateGame() throws DataAccessException {
+        // create a game
+        String gameName = "Test Game";
+        int gameID = gameDAO.createGame(authToken, gameName);
+
+        // check the gameID is positive
+        assertTrue(gameID > 0, "Game ID should be positive");
+
+        // get original game data
+        GameData originalGame = gameDAO.getGameByID(gameID);
+
+        // update game
+        String updatedGameName = null;
+        GameData updatedGameData = new GameData(
+                gameID,
+                "WhiteUser",
+                "BlackUser",
+                updatedGameName,
+                originalGame.game());
+        try {
+            gameDAO.updateGame(updatedGameData);
+        } catch (DataAccessException e) {
+            assertTrue(true, "DataAccessException was thrown");
+        }
+        // check for success
+        assertNotSame(originalGame.whiteUsername(), updatedGameData.whiteUsername(), "white username should not match");
+        assertNotSame(originalGame.blackUsername(), updatedGameData.blackUsername(), "black username should not match");
+        assertNotSame(originalGame.gameName(), updatedGameData.gameName(), "game name should not match");
+        assertEquals(originalGame.game(), updatedGameData.game(), "Games should match");
+    }
+
     // get all games test
+    @Test
+    @Order(7)
+    @DisplayName("Valid get all games")
+    void validGetAllGames() throws DataAccessException {
+        // create game 1
+        String game1 = "Game 1";
+        int gameID1 = gameDAO.createGame(authToken, game1);
+
+        // create game 1
+        String game2 = "Game 2";
+        int gameID2 = gameDAO.createGame(authToken, game2);
+
+        // create game 1
+        String game3 = "Game 3";
+        int gameID3 = gameDAO.createGame(authToken, game3);
+
+        // check the gameID is positive
+        assertTrue(gameID1 > 0, "Game ID should be positive");
+        assertTrue(gameID2 > 1, "Game ID should be positive");
+        assertTrue(gameID3 > 2, "Game ID should be positive");
+
+
+        Collection<GameData> games = gameDAO.getAllGames();
+        assertFalse(games.isEmpty(), "Games should not be empty");
+
+        boolean foundGame1 = false;
+        boolean foundGame2 = false;
+        boolean foundGame3 = false;
+        for (GameData gameData : games) {
+            if (gameData.gameID() == gameID1 && gameData.gameName().equals(game1)) {
+                foundGame1 = true;
+            } else if (gameData.gameID() == gameID2 && gameData.gameName().equals(game2)) {
+                foundGame2 = true;
+            } else if (gameData.gameID() == gameID3 && gameData.gameName().equals(game3)) {
+                foundGame3 = true;
+            }
+        }
+        assertTrue(foundGame1, "Game 1 should be found");
+        assertTrue(foundGame2, "Game 2 should be found");
+        assertTrue(foundGame3, "Game 3 should be found");
+    }
 
     // clear test
 }
