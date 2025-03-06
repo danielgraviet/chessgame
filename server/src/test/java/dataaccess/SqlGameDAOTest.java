@@ -1,7 +1,5 @@
-package sql;
+package dataaccess;
 
-import dataaccess.DataAccessException;
-import dataaccess.SqlGameDAO;
 import model.game.GameData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;

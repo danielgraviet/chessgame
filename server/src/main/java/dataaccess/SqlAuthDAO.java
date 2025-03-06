@@ -7,7 +7,7 @@ import java.sql.*;
 public class SqlAuthDAO implements AuthDAO {
     public AuthData getUser(String token) throws DataAccessException {
         // create an injection statement for sql of what I want it to do.
-        String sql = "SELECT auth_token, username FROM auth_tokens WHERE auth_token = ?";
+        String sql = "SELECT username, auth_token FROM auth_tokens WHERE auth_token = ?";
 
         //establish the connection using a try catch method
         try (Connection conn = DatabaseManager.getConnection();
@@ -18,7 +18,7 @@ public class SqlAuthDAO implements AuthDAO {
                 String authToken = rs.getString("auth_token");
                 String username = rs.getString("username");
                 System.out.println("DEBUG/ Found Auth Token for: " + authToken + " " + username);
-                return new AuthData(authToken, username);
+                return new AuthData(username, authToken);
             }
             System.out.println("DEBUG/ No Auth Token for: " + token);
             return null;
