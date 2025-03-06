@@ -244,13 +244,9 @@ public class SqlGameDAOTest {
         String game1 = "Game 1";
         gameDAO.createGame(authToken, game1);
 
-        // create game 1
+        // create game 2
         String game2 = "Game 2";
         gameDAO.createGame(authToken, game2);
-
-        // create game 1
-        String game3 = "Game 3";
-        gameDAO.createGame(authToken, game3);
 
         // get all the games, and make sure they are there
         Collection<GameData> games = gameDAO.getAllGames();
