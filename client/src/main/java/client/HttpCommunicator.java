@@ -30,7 +30,9 @@ public class HttpCommunicator implements ServerCommunicator {
 
 
     public boolean login(String username, String password) {
-        return false;
+        Map<String, String> body = Map.of("username", username, "password", password);
+        Map<String, Object> response = sendRequest("POST", "/session", body);
+        return handleAuthResponse(response);
     }
 
     public boolean logout(){

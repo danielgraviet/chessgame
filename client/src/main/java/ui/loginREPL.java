@@ -32,6 +32,20 @@ public class loginREPL {
                         break;
                     }
                     out.println("Registration failed.");
+
+                case "login":
+                    if (input.length != 3){
+                        out.println("Please enter username and password.");
+                        break;
+                    }
+                    if (facade.login(input[1], input[2])) {
+                        out.println("User successfully logged in.");
+                        loggedIn = true;
+                        break;
+                    } else {
+                        out.println("Login failed.");
+                        continue;
+                    }
                 case "quit":
                     out.println("You have quit the client. Goodbye!");
                     return;

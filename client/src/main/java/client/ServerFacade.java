@@ -15,6 +15,10 @@ public class ServerFacade {
         return serverCommunicator.register(username, password, email);
     }
 
+    public boolean login(String username, String password){
+        return serverCommunicator.login(username, password);
+    }
+
     public String getAuthToken() {
         return authToken;
     }
