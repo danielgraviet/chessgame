@@ -8,9 +8,11 @@ import static java.lang.System.out;
 
 public class loginREPL {
     ServerFacade facade;
+    loggedInREPL loggedInREPL;
 
     public loginREPL(ServerFacade facade) {
         this.facade = facade;
+        loggedInREPL = new loggedInREPL(facade);
     }
 
     public void run() {
@@ -55,8 +57,9 @@ public class loginREPL {
                     break;
 
             }
+            if (!loggedIn) out.print("> ");
         }
-        out.println("Logging in...");
+        loggedInREPL.run();
     }
 
     private String[] getUserInput() {
@@ -68,6 +71,7 @@ public class loginREPL {
         out.println("""
                 Available commands:
                     register: <username> <password> <email> - Register a new user.
+                    login: <username> <password> - Login an existing user.
                     quit: Quit the client.
                     help: Show this menu
                 """);
