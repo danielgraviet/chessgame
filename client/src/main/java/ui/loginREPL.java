@@ -16,6 +16,7 @@ public class loginREPL {
     public void run() {
         boolean loggedIn = false;
         out.print("Chess Game Started. Enter 'help' to get started.");
+        out.print("\n>");
         while (!loggedIn) {
             String[] input = getUserInput();
             switch (input[0]) {
@@ -30,9 +31,9 @@ public class loginREPL {
                         loggedIn = true;
                         break;
                     }
-
+                    out.println("Registration failed.");
                 case "quit":
-                    out.println("Bye!");
+                    out.println("You have quit the client. Goodbye!");
                     return;
 
                 case "help":
@@ -41,15 +42,21 @@ public class loginREPL {
 
             }
         }
+        out.println("Logging in...");
     }
 
     private String[] getUserInput() {
         Scanner scanner = new Scanner(System.in);
-        return scanner.nextLine().split(" ");
+        return scanner.nextLine().trim().split("\\s+");
     }
 
     private void printMenu() {
-        out.println("This should print the help menu");
+        out.println("""
+                Available commands:
+                    register: <username> <password> <email> - Register a new user.
+                    quit: Quit the client.
+                    help: Show this menu
+                """);
     }
 
     public static void main(String[] args) {
