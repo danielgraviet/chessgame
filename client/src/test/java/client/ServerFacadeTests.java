@@ -71,4 +71,24 @@ public class ServerFacadeTests {
         // check if the user is in the server
         Assertions.assertFalse(register, "Registration should not succeed.");
     }
+
+    @Test
+    @Order(3)
+    public void validLoginUser() {
+        // this returns a boolean value if the login is successful
+        boolean login = facade.login("existingUser", "password");
+
+        // check if the login worked
+        Assertions.assertTrue(login, "Login should be VALID.");
+    }
+
+    @Test
+    @Order(4)
+    public void invalidLoginUser() {
+        // this returns a boolean value if the login was unsuccessful
+        boolean login = facade.login("fakeUser", "password");
+
+        // check for the invalid login
+        Assertions.assertFalse(login, "Login should be INVALID.");
+    }
 }
