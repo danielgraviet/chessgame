@@ -31,7 +31,13 @@ public class loggedInREPL {
                     out.print("Implement list games functionality");
                     break;
                 case "create game":
-                    out.print("Implement create game functionality");
+                    if (input.length != 2) {
+                        out.print("Please enter create game and a valid game name.");
+                        break;
+                    }
+
+                    facade.createGame(input[1]);
+                    out.print("Created game " + input[1]);
                     break;
                 case "help":
                     printMenu();
@@ -55,7 +61,7 @@ public class loggedInREPL {
         out.println("""
                 Available commands:
                     logout: Current user will be logged out.
-                    create game: Creates a new game.
+                    create game: <game name> - Creates a new game.
                     list games: List all games.
                     play game: Joins a specific game.
                     observe game: Observe a game.

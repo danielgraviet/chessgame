@@ -50,7 +50,27 @@ public class HttpCommunicator implements ServerCommunicator {
     }
 
     public int createGame(String gameName) {
-        return 0;
+        Map<String, Object> response = sendRequest("POST", "/game", Map.of("gameName", gameName));
+
+        // simple error checking
+        if (response.containsKey("error")) {
+            throw new RuntimeException("Failed te create game: " + response);
+        }
+
+        // check for an existing id
+        if (!response.containsKey("gameID")) {
+            throw new RuntimeException("Missing gameID: " + response);
+        }
+
+        // get the gameID and convert it to an int
+        Object gameID = response.get("gameID");
+        if (gameID == null) {
+            throw new RuntimeException("gameID is null: " + response);
+        } else if (gameID instanceof Number) {
+            return ((Number) gameID).intValue();
+        } else {
+            throw new RuntimeException("gameID is not an integer: " + response);
+        }
     }
 
     public HashSet<GameData> listGames() {

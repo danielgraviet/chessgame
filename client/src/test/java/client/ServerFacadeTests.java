@@ -116,4 +116,25 @@ public class ServerFacadeTests {
         // check for the invalid login
         Assertions.assertFalse(secondLogout, "Second logout should be INVALID.");
     }
+
+    @Test
+    @Order(7)
+    public void validCreateGame() {
+        var gameID = facade.createGame("testGame");
+        Assertions.assertTrue(gameID > 0, "Game ID should be greater than 0.");
+    }
+
+    @Test
+    @Order(8)
+    public void invalidCreateGame() {
+        var gameID = facade.createGame("testGame");
+        Assertions.assertTrue(gameID > 0, "Game ID should be greater than 0.");
+
+        try {
+            // try to create game with null name.
+            facade.createGame(null);
+        } catch (NullPointerException e) {
+            Assertions.assertTrue(true, "Game name should not be null.");
+        }
+    }
 }

@@ -27,6 +27,10 @@ public class ServerFacade {
         serverCommunicator.reset();
     }
 
+    public int createGame(String gameName){
+        return serverCommunicator.createGame(gameName);
+    }
+
     public String getAuthToken() {
         return authToken;
     }
