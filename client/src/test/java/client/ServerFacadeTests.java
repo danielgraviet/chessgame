@@ -91,4 +91,29 @@ public class ServerFacadeTests {
         // check for the invalid login
         Assertions.assertFalse(login, "Login should be INVALID.");
     }
+
+    @Test
+    @Order(5)
+    public void validLogoutUser() {
+        // this returns a boolean value if the logout was successful
+        // remember, one user is already in the server
+        boolean logout = facade.logout();
+
+        // check for the invalid login
+        Assertions.assertTrue(logout, "Logout should be VALID.");
+    }
+
+    @Test
+    @Order(6)
+    public void invalidLogoutUser() {
+        // this returns a boolean value if the logout was successful
+        // remember, one user is already in the server
+
+        boolean logout = facade.logout();
+        Assertions.assertTrue(logout, "First logout should be VALID.");
+
+        boolean secondLogout = facade.logout();
+        // check for the invalid login
+        Assertions.assertFalse(secondLogout, "Second logout should be INVALID.");
+    }
 }
