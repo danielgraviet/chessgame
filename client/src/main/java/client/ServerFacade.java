@@ -1,5 +1,10 @@
 package client;
 
+import model.game.GameData;
+
+import java.util.Collection;
+import java.util.HashSet;
+
 public class ServerFacade {
     private final ServerCommunicator serverCommunicator;
     private String authToken;
@@ -29,6 +34,10 @@ public class ServerFacade {
 
     public int createGame(String gameName){
         return serverCommunicator.createGame(gameName);
+    }
+
+    public HashSet<GameData> listGames() {
+        return serverCommunicator.listGames();
     }
 
     public String getAuthToken() {

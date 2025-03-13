@@ -1,8 +1,11 @@
 package client;
 
 import model.auth.AuthData;
+import model.game.GameData;
 import org.junit.jupiter.api.*;
 import server.Server;
+
+import java.util.Collection;
 
 public class ServerFacadeTests {
 
@@ -136,5 +139,37 @@ public class ServerFacadeTests {
         } catch (NullPointerException e) {
             Assertions.assertTrue(true, "Game name should not be null.");
         }
+    }
+
+    @Test
+    @Order(9)
+    public void validListGames() {
+        // create some games
+        var firstGame = facade.createGame("firstGame");
+        Assertions.assertTrue(firstGame > 0, "first game ID should be greater than 0.");
+
+        var secondGame = facade.createGame("secondGame");
+        Assertions.assertTrue(secondGame > 1, "second game ID should be greater than 1.");
+
+        var thirdGame = facade.createGame("thirdGame");
+        Assertions.assertTrue(thirdGame > 2, "third game ID should be greater than 2.");
+
+        Collection<GameData> games = facade.listGames();
+        Assertions.assertNotNull(games, "games should not be null.");
+        Assertions.assertEquals(3, games.size(), "games size should be 3.");
+
+        // make sure game data has stayed the same
+        // Check that firstGame, secondGame, and thirdGame are maintained
+        boolean foundFirst = games.stream().anyMatch(game ->
+                game.gameID() == firstGame && "firstGame".equals(game.gameName())
+        );
+        boolean foundSecond = games.stream().anyMatch(game ->
+                game.gameID() == secondGame && "secondGame".equals(game.gameName())
+        );
+        boolean foundThird = games.stream().anyMatch(game ->
+                game.gameID() == thirdGame && "thirdGame".equals(game.gameName())
+        );
+
+        Assertions.assertTrue(foundFirst && foundSecond && foundThird, "all game names should have been found.");
     }
 }
