@@ -1,5 +1,6 @@
 package client;
 
+import model.auth.AuthData;
 import org.junit.jupiter.api.*;
 import server.Server;
 
@@ -24,8 +25,12 @@ public class ServerFacadeTests {
 
     @BeforeEach
     public void setup() {
-        // make sure server data is cleared. might need a reset method.
+        // make sure server data is cleared.
         facade.reset();
+
+        // insert 1 existing user
+        facade.register("existingUser", "password", "existinguser@gmail.com");
+
     }
 
 
@@ -47,4 +52,23 @@ public class ServerFacadeTests {
         Assertions.assertFalse(facade.login("testUser", "testPass"), "User should not exist after reset");
     }
 
+    @Test
+    @Order(1)
+    public void validRegisterUser() {
+        // this returns a boolean value if the register is successful
+        boolean register = facade.register("newUser", "password", "newuser@gmail.com");
+
+        // check if the user is in the server
+        Assertions.assertTrue(register, "Registration should succeed.");
+    }
+
+    @Test
+    @Order(2)
+    public void invalidRegisterUser() {
+        // this returns a boolean value if the register is successful
+        boolean register = facade.register("existingUser", "password", "newuser@gmail.com");
+
+        // check if the user is in the server
+        Assertions.assertFalse(register, "Registration should not succeed.");
+    }
 }
