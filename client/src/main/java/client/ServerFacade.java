@@ -23,6 +23,10 @@ public class ServerFacade {
         return serverCommunicator.logout();
     }
 
+    public void reset() {
+        serverCommunicator.reset();
+    }
+
     public String getAuthToken() {
         return authToken;
     }

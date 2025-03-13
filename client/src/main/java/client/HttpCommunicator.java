@@ -41,6 +41,14 @@ public class HttpCommunicator implements ServerCommunicator {
         return handleAuthResponse(response);
     }
 
+    public void reset() {
+        Map<String, Object> response = sendRequest("DELETE", "/db", null);
+        if (response.containsKey("error")) {
+            throw new RuntimeException("Failed te reset server: " + response);
+        }
+        System.out.println("System Reset: " + response);
+    }
+
     public int createGame(String gameName) {
         return 0;
     }
