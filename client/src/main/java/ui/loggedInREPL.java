@@ -35,7 +35,6 @@ public class loggedInREPL {
                         out.print("Please enter create game and a valid game name.");
                         break;
                     }
-
                     facade.createGame(input[1]);
                     out.print("Created game " + input[1]);
                     break;

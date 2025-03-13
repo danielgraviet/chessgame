@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
 import model.game.GameData;
 
@@ -8,12 +9,13 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class HttpCommunicator implements ServerCommunicator {
     private final String baseUrl;
     private final ServerFacade facade;
-    private final Gson gson = new Gson();
+    private final Gson GSON = new Gson();
 
     // this class is like a mailman, and takes care of all the tasks delivering and receiving
     public HttpCommunicator(ServerFacade facade,  String serverName) {
@@ -74,7 +76,52 @@ public class HttpCommunicator implements ServerCommunicator {
     }
 
     public HashSet<GameData> listGames() {
-        return null;
+        //Spark.get("/game", gameServer::listGames);
+        Map<String, Object> response = sendRequest("GET", "/game", null);
+
+        // check for errors
+        if (response.containsKey("error")) {
+            throw new RuntimeException("Failed to create game: " + response);
+        }
+
+        // make sure games are present
+        Object gamesObject = response.get("games");
+        if (gamesObject == null) {
+            throw new RuntimeException("Missing games: " + response);
+        }
+
+        // storage for rawGames (json) -> games (gameData objects)
+        List<?> rawGamesList = (List<?>) gamesObject;
+        HashSet<GameData> games = new HashSet<>();
+
+        for (Object game : rawGamesList) {
+            if (!(game instanceof Map)) {
+                throw new RuntimeException("Invalid game format: " + game);
+            }
+
+            Map<String, Object> gameMap = (Map<String, Object>) game;
+
+            // extract the objects and prepare for conversion
+            Object gameIDObject = gameMap.get("gameID");
+            Object whiteUsernameObject = gameMap.get("whiteUsername");
+            Object blackUsernameObject  = gameMap.get("blackUsername");
+            Object gameNameObject = gameMap.get("gameName");
+            Object chessGameObject = gameMap.get("chessGame");
+
+            // convert from number to int.
+            int gameID = ((Number) gameIDObject).intValue();
+
+            // make sure null is also okay.
+            String whiteUsername = whiteUsernameObject != null ? whiteUsernameObject.toString() : null;
+            String blackUsername = blackUsernameObject != null ? blackUsernameObject.toString() : null;
+
+            String gameName = gameNameObject.toString();
+            ChessGame chessGame = GSON.fromJson(GSON.toJson(chessGameObject), ChessGame.class);
+
+            games.add(new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame));
+        }
+
+        return games;
     }
 
     public boolean joinGame(int gameId, String playerColor) {
@@ -91,7 +138,7 @@ public class HttpCommunicator implements ServerCommunicator {
             }
 
             try (var reader = new InputStreamReader(connection.getInputStream())) {
-                return gson.fromJson(reader, Map.class);
+                return GSON.fromJson(reader, Map.class);
             }
         } catch (IOException e) {
             return Map.of("error", e.getMessage());
@@ -111,7 +158,7 @@ public class HttpCommunicator implements ServerCommunicator {
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/json");
             try (var output = conn.getOutputStream()) {
-                output.write(gson.toJson(body).getBytes());
+                output.write(GSON.toJson(body).getBytes());
             }
         }
         return conn;
