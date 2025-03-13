@@ -12,7 +12,7 @@ public class loginREPL {
 
     public loginREPL(ServerFacade facade) {
         this.facade = facade;
-        loggedInREPL = new loggedInREPL(facade);
+        this.loggedInREPL = new loggedInREPL(facade, this);
     }
 
     public void run() {

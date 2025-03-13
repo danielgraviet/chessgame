@@ -8,14 +8,17 @@ import static java.lang.System.out;
 
 public class loggedInREPL {
     ServerFacade facade;
+    loginREPL loginREPL;
 
-    public loggedInREPL(ServerFacade facade) {
+    public loggedInREPL(ServerFacade facade, loginREPL loginREPL) {
         this.facade = facade;
+        this.loginREPL = loginREPL;
     }
 
     public void run() {
         boolean loggedIn = true;
         while (loggedIn) {
+            out.print("[LOGGED IN]: ");
             String[] input = getUserInput();
             switch (input[0]) {
                 case "observe game":
@@ -34,8 +37,11 @@ public class loggedInREPL {
                     printMenu();
                     break;
                 case "logout":
-                    out.print("Implement logged out functionality");
-                    break;
+                    if (facade.logout()) {
+                        out.println("You have logged out");
+                        loggedIn = false;
+                        loginREPL.run();
+                    }
             }
         }
     }

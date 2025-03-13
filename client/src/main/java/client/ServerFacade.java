@@ -19,6 +19,10 @@ public class ServerFacade {
         return serverCommunicator.login(username, password);
     }
 
+    public boolean logout(){
+        return serverCommunicator.logout();
+    }
+
     public String getAuthToken() {
         return authToken;
     }

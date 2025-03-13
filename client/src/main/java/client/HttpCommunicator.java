@@ -36,7 +36,9 @@ public class HttpCommunicator implements ServerCommunicator {
     }
 
     public boolean logout(){
-        return false;
+        // this should log out the user, and remove the auth token
+        Map<String, Object> response = sendRequest("DELETE", "/session", null);
+        return handleAuthResponse(response);
     }
 
     public int createGame(String gameName) {
