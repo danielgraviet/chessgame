@@ -205,4 +205,19 @@ public class ServerFacadeTests {
 
         // note - the same user cannot join the same game twice, because it will throw auth token errors. two distinct users must join a game.
     }
+
+    @Test
+    @Order(11)
+    public void invalidJoinGame() {
+        // tries to join game twice as same user.
+        var firstGame = facade.createGame("firstGame");
+        Assertions.assertTrue(firstGame > 0, "first game ID should be greater than 0.");
+        System.out.print("Game has been created.");
+
+        boolean validJoinWhite = facade.joinGame(firstGame, "WHITE");
+        Assertions.assertTrue(validJoinWhite);
+
+        boolean validJoinBlack = facade.joinGame(firstGame, "BLACK");
+        Assertions.assertFalse(validJoinBlack, "player cannot join game again as different team color");
+    }
 }
