@@ -1,7 +1,10 @@
 package ui;
 
 import client.ServerFacade;
+import model.game.GameData;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Scanner;
 
 import static java.lang.System.out;
@@ -20,33 +23,53 @@ public class loggedInREPL {
         while (loggedIn) {
             out.print("[LOGGED IN]: ");
             String[] input = getUserInput();
-            switch (input[0]) {
+
+            // works for empty input
+            if (input.length == 0 || input[0].isEmpty()) {
+                continue;
+            }
+
+            // combine input into full command for two word commands
+            String command = String.join(" ", input);
+
+            switch (command) {
                 case "observe game":
-                    out.print("Implement observe game functionality");
+                    out.println("Implement observe game functionality");
                     break;
                 case "play game":
-                    out.print("Implement play game functionality");
+                    out.println("Implement play game functionality");
                     break;
                 case "list games":
-                    out.print("Implement list games functionality");
-                    break;
-                case "create game":
-                    if (input.length != 2) {
-                        out.print("Please enter create game and a valid game name.");
-                        break;
+                    out.println("Executing list games...");
+                    Collection<GameData> games = facade.listGames();
+                    if (games == null || games.isEmpty()) {
+                        out.println("No games found");
+                    } else {
+                        out.println("Found " + games.size() + " games");
+                        for (GameData game : games) {
+                            out.println(game);
+                        }
                     }
-                    facade.createGame(input[1]);
-                    out.print("Created game " + input[1]);
                     break;
-                case "help":
-                    printMenu();
-                    break;
-                case "logout":
-                    if (facade.logout()) {
-                        out.println("You have logged out");
-                        loggedIn = false;
-                        loginREPL.run();
+                default:
+                    // multi-word commands
+                    if (input[0].equals("create") && input.length == 3 && input[1].equals("game")) {
+                        out.println("Creating game...");
+                        facade.createGame(input[2]);
+                        out.println("Created game " + input[2]);
+                    } else if (command.equals("help")) {
+                        printMenu();
+                    } else if (command.equals("logout")) {
+                        if (facade.logout()) {
+                            out.println("You have logged out");
+                            loggedIn = false;
+                            loginREPL.run();
+                        }
+                    } else {
+                        out.println("Unknown command: " + command);
+                        out.println("Type 'help' for available commands.");
                     }
+                    break;
             }
         }
     }
