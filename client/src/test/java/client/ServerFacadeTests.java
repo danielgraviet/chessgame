@@ -172,4 +172,37 @@ public class ServerFacadeTests {
 
         Assertions.assertTrue(foundFirst && foundSecond && foundThird, "all game names should have been found.");
     }
+
+    @Test
+    @Order(10)
+    public void invalidListGames() {
+        // list empty games
+        Collection<GameData> games = facade.listGames();
+        Assertions.assertNotNull(games, "games should not be null.");
+        Assertions.assertEquals(0, games.size(), "games size should be 0.");
+    }
+
+    @Test
+    @Order(11)
+    public void validJoinGame() {
+        // create a game
+        facade.login("existingUser", "password");
+        var firstGame = facade.createGame("firstGame");
+        Assertions.assertTrue(firstGame > 0, "first game ID should be greater than 0.");
+        System.out.print("Game has been created.");
+
+        boolean validJoinWhite = facade.joinGame(firstGame, "WHITE");
+
+        // switch to a different user
+        facade.register("newUser", "password", "newuser@gmail.com");
+        facade.login("newUser", "password");
+
+        // join the existing game
+        boolean validJoinBlack = facade.joinGame(firstGame, "BLACK");
+
+        // check if the joins were successful.
+        Assertions.assertTrue(validJoinWhite && validJoinBlack);
+
+        // note - the same user cannot join the same game twice, because it will throw auth token errors. two distinct users must join a game.
+    }
 }

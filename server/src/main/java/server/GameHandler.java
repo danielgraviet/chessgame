@@ -77,7 +77,7 @@ public class GameHandler {
             }
 
             // get the gameID and teamColor
-            int gameID = joinRequest.gameID();
+            int gameId = joinRequest.gameId();
             String teamColorStr = joinRequest.playerColor();
 
             // teamColorStr is getting null, and throwing this error.
@@ -98,7 +98,7 @@ public class GameHandler {
             }
 
             // join the game
-            gameService.joinGame(authToken, gameID, teamColor);
+            gameService.joinGame(authToken, gameId, teamColor);
 
             res.status(200);
             return new Gson().toJson(new EmptyResponse());

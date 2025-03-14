@@ -40,6 +40,10 @@ public class ServerFacade {
         return serverCommunicator.listGames();
     }
 
+    public boolean joinGame(int gameId, String playerColor){
+        return serverCommunicator.joinGame(gameId, playerColor);
+    }
+
     public String getAuthToken() {
         return authToken;
     }

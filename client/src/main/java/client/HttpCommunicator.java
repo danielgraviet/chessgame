@@ -125,7 +125,11 @@ public class HttpCommunicator implements ServerCommunicator {
     }
 
     public boolean joinGame(int gameId, String playerColor) {
-        return false;
+        //Spark.put("/game", gameServer::joinGame);
+        Map<String, Object> body = Map.of("gameId", gameId, "playerColor", playerColor);
+        Map<String, Object> response = sendRequest("PUT", "/game", body);
+        // signify if it worked.
+        return handleAuthResponse(response);
     }
 
     // private methods
@@ -133,6 +137,8 @@ public class HttpCommunicator implements ServerCommunicator {
         try {
             HttpURLConnection connection = setupConnection(method, endpoint, body);
             int status = connection.getResponseCode();
+            System.out.println("HTTP status code: " + status);
+            // response code is set as 400
             if (status >= 400) {
                 return Map.of("error", "HTTP" + status);
             }
