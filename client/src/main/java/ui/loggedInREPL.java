@@ -33,23 +33,6 @@ public class loggedInREPL {
             String command = String.join(" ", input);
 
             switch (command) {
-                case "observe game":
-                    out.println("Implement observe game functionality");
-                    // Allows the user to specify which game they want to observe.
-                    // They should be able to enter the number of the desired game.
-                    // Your client will need to keep track of which number corresponds to which game from the last time it listed the games.
-                    // Functionality will be added in Phase 6.
-                    break;
-                case "play game":
-                    // command looks like "play game ID WHITE/BLACK"
-                    // ID corresponds to the correct game ID integer.
-
-                    out.println("Implement play game functionality");
-                    // Allows the user to specify which game they want to join and what color they want to play.
-                    // They should be able to enter the number of the desired game.
-                    // Your client will need to keep track of which number corresponds to which game from the last time it listed the games.
-                    // Calls the server join API to join the user to the game.
-                    break;
                 case "list games":
                     out.println("Executing list games...");
                     Collection<GameData> games = facade.listGames();
@@ -64,14 +47,16 @@ public class loggedInREPL {
                     break;
                 default:
                     // multi-word commands
-                    if (input[0].equals("play") && input.length == 4 && input[1].equals("game")) {
+                    if (input[0].equals("observe") && input.length == 3 && input[1].equals("observe")) {
+                        out.println("Observing game: " + input[2]);
+                        // add observe game function
+                    } else if (input[0].equals("join") && input.length == 4 && input[1].equals("game")) {
                         if (facade.joinGame(Integer.parseInt(input[2]), input[3])) {
                             out.println("Joined game: " + input[2]);
                             // add implementation to show that the user joined the game. display the current game info.
                         } else {
                             out.println("Failed to join game.");
                         }
-
                     } else if (input[0].equals("create") && input.length == 3 && input[1].equals("game")) {
                         out.println("Creating game...");
                         facade.createGame(input[2]);
@@ -101,11 +86,11 @@ public class loggedInREPL {
     private void printMenu() {
         out.println("""
                 Available commands:
-                    logout: Current user will be logged out.
-                    create game: <game name> - Creates a new game.
-                    list games: List all games.
-                    play game: Joins a specific game.
-                    observe game: Observe a game.
+                    Logout: Current user will be logged out.
+                    Create game: <game name> - Creates a new game.
+                    List games: List all games.
+                    Join game: <gameID> <BLACK/WHITE> - Joins a specific game.
+                    Observe game: Observe a game.
                 """);
     }
 }
