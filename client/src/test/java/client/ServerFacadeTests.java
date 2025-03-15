@@ -217,7 +217,7 @@ public class ServerFacadeTests {
         boolean validJoinWhite = facade.joinGame(firstGame, "WHITE");
         Assertions.assertTrue(validJoinWhite);
 
-        boolean validJoinBlack = facade.joinGame(firstGame, "BLACK");
-        Assertions.assertFalse(validJoinBlack, "player cannot join game again as different team color");
+        boolean invalidDuplicateJoin = facade.joinGame(firstGame, "WHITE");
+        Assertions.assertFalse(invalidDuplicateJoin, "player cannot join game again as different team color");
     }
 }

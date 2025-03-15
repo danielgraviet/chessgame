@@ -82,7 +82,7 @@ public class GameService {
         if (authDAO.getUser(authToken) == null) {
             throw new DataAccessException("Invalid token.");
         } else {
-            return gameDAO.getAllGames(); // fix me
+            return gameDAO.getAllGames();
         }
     }
 

@@ -79,9 +79,10 @@ public class HttpCommunicator implements ServerCommunicator {
         //Spark.get("/game", gameServer::listGames);
         Map<String, Object> response = sendRequest("GET", "/game", null);
 
-        // check for errors
+        // error checking
         if (response.containsKey("error")) {
-            throw new RuntimeException("Failed to create game: " + response);
+            String errorMsg = response.containsKey("message") ? (String) response.get("message") : "Unknown error";
+            throw new RuntimeException("Failed to list games: " + response.get("error") + " - " + errorMsg);
         }
 
         // make sure games are present
@@ -139,8 +140,14 @@ public class HttpCommunicator implements ServerCommunicator {
             int status = connection.getResponseCode();
             System.out.println("HTTP status code: " + status);
             // response code is set as 400
-            if (status >= 400) {
+            if (status == 400) {
                 return Map.of("error", "HTTP" + status);
+            } else if (status == 401) {
+                return Map.of("error", " 401: Unauthorized");
+            } else if (status == 403) {
+                return Map.of("error", " 403: Forbidden");
+            } else if (status == 500) {
+                return Map.of("error", " 500: Internal Server Error");
             }
 
             try (var reader = new InputStreamReader(connection.getInputStream())) {
@@ -155,6 +162,10 @@ public class HttpCommunicator implements ServerCommunicator {
         URI uri = URI.create(baseUrl + endpoint);
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
         conn.setRequestMethod(method);
+
+        String authToken = facade.getAuthToken();
+        System.out.println("Auth token for " + method + " " + endpoint + " " + (authToken != null ? authToken : "null"));
+
 
         if (facade.getAuthToken() != null) {
             conn.setRequestProperty("Authorization", facade.getAuthToken());
@@ -174,7 +185,10 @@ public class HttpCommunicator implements ServerCommunicator {
         if (response.containsKey("error")) {
             return false;
         }
-        facade.setAuthToken((String) response.get("authToken"));
+
+        if (response.containsKey("authToken") && response.get("authToken") != null) {
+            facade.setAuthToken((String) response.get("authToken"));
+        }
         return true;
     }
 }

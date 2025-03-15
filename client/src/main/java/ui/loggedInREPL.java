@@ -35,9 +35,20 @@ public class loggedInREPL {
             switch (command) {
                 case "observe game":
                     out.println("Implement observe game functionality");
+                    // Allows the user to specify which game they want to observe.
+                    // They should be able to enter the number of the desired game.
+                    // Your client will need to keep track of which number corresponds to which game from the last time it listed the games.
+                    // Functionality will be added in Phase 6.
                     break;
                 case "play game":
+                    // command looks like "play game ID WHITE/BLACK"
+                    // ID corresponds to the correct game ID integer.
+
                     out.println("Implement play game functionality");
+                    // Allows the user to specify which game they want to join and what color they want to play.
+                    // They should be able to enter the number of the desired game.
+                    // Your client will need to keep track of which number corresponds to which game from the last time it listed the games.
+                    // Calls the server join API to join the user to the game.
                     break;
                 case "list games":
                     out.println("Executing list games...");
@@ -53,7 +64,15 @@ public class loggedInREPL {
                     break;
                 default:
                     // multi-word commands
-                    if (input[0].equals("create") && input.length == 3 && input[1].equals("game")) {
+                    if (input[0].equals("play") && input.length == 4 && input[1].equals("game")) {
+                        if (facade.joinGame(Integer.parseInt(input[2]), input[3])) {
+                            out.println("Joined game: " + input[2]);
+                            // add implementation to show that the user joined the game. display the current game info.
+                        } else {
+                            out.println("Failed to join game.");
+                        }
+
+                    } else if (input[0].equals("create") && input.length == 3 && input[1].equals("game")) {
                         out.println("Creating game...");
                         facade.createGame(input[2]);
                         out.println("Created game " + input[2]);
