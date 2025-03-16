@@ -4,10 +4,12 @@ import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
 
+import java.util.Objects;
+
 import static ui.EscapeSequences.*;
 
 public class renderBoard {
-    public static void printBoard(ChessGame game,  boolean whitePerspective) {
+    public static void printBoard(ChessGame game, boolean whitePerspective) {
         ChessBoard board = game.getBoard();
         StringBuilder builder = new StringBuilder();
         builder.append(ERASE_SCREEN);
@@ -45,7 +47,7 @@ public class renderBoard {
                 if (piece == null) {
                     builder.append(EMPTY);
                 } else {
-                    builder.append(" X ");
+                    builder.append(convertPieceToSymbol(piece));
                 }
             }
             builder.append(RESET_BG_COLOR)
@@ -62,5 +64,39 @@ public class renderBoard {
                 .append(RESET_TEXT_COLOR);
 
         System.out.println(builder);
+    }
+
+    public static String convertPieceToSymbol(ChessPiece piece) {
+        if (piece == null) {
+            return EMPTY;
+        } else if (Objects.equals(piece.toString(), "WHITE PAWN")) {
+            return WHITE_PAWN;
+        } else if (Objects.equals(piece.toString(), "WHITE KING")) {
+            return WHITE_KING;
+        } else if (Objects.equals(piece.toString(), "WHITE QUEEN")) {
+            return WHITE_QUEEN;
+        } else if (Objects.equals(piece.toString(), "WHITE KNIGHT")) {
+            return WHITE_KNIGHT;
+        } else if (Objects.equals(piece.toString(), "WHITE BISHOP")) {
+            return WHITE_BISHOP;
+        } else if (Objects.equals(piece.toString(), "WHITE ROOK")) {
+            return WHITE_ROOK;
+
+
+        } else if (Objects.equals(piece.toString(), "BLACK PAWN")) {
+            return BLACK_PAWN;
+        } else if (Objects.equals(piece.toString(), "BLACK KING")) {
+            return BLACK_KING;
+        } else if (Objects.equals(piece.toString(), "BLACK QUEEN")) {
+            return BLACK_QUEEN;
+        } else if (Objects.equals(piece.toString(), "BLACK KNIGHT")) {
+            return BLACK_KNIGHT;
+        } else if (Objects.equals(piece.toString(), "BLACK BISHOP")) {
+            return BLACK_BISHOP;
+        } else if (Objects.equals(piece.toString(), "BLACK ROOK")) {
+            return BLACK_ROOK;
+        } else {
+            return "INVALID PIECE";
+        }
     }
 }
