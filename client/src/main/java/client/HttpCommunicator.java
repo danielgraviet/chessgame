@@ -144,19 +144,11 @@ public class HttpCommunicator implements ServerCommunicator {
         // signify if it worked.
         return handleAuthResponse(response);
     }
-
-    public GameData getGame(int gameId) {
-        Map<String, Object> response = sendRequest("GET", "/game/" + gameId, null);
-        return GSON.fromJson(GSON.toJson(response), GameData.class);
-    }
-
     // private methods
     private Map<String, Object> sendRequest(String method, String endpoint, Map<String, ?> body) {
         try {
             HttpURLConnection connection = setupConnection(method, endpoint, body);
             int status = connection.getResponseCode();
-            System.out.println("HTTP status code: " + status);
-            // response code is set as 400
             if (status == 400) {
                 return Map.of("error", "HTTP" + status);
             } else if (status == 401) {
@@ -180,8 +172,8 @@ public class HttpCommunicator implements ServerCommunicator {
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
         conn.setRequestMethod(method);
 
-        String authToken = facade.getAuthToken();
-        System.out.println("Auth token for " + method + " " + endpoint + " " + (authToken != null ? authToken : "null"));
+        //String authToken = facade.getAuthToken();
+        //System.out.println("Auth token for " + method + " " + endpoint + " " + (authToken != null ? authToken : "null"));
 
 
         if (facade.getAuthToken() != null) {

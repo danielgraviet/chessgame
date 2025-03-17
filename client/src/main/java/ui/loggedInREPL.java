@@ -157,7 +157,7 @@ public class loggedInREPL {
                     Create game: <game name> - Creates a new game.
                     List games: List all games.
                     Join game: <gameID> <BLACK/WHITE> - Joins a specific game.
-                    Observe game: Observe a game.
+                    Observe game: <gameID> - Observe a game.
                 """);
     }
 }

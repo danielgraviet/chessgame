@@ -44,10 +44,6 @@ public class ServerFacade {
         return serverCommunicator.joinGame(gameId, playerColor);
     }
 
-    public GameData getGame(int gameId){
-        return serverCommunicator.getGame(gameId);
-    }
-
     public String getAuthToken() {
         return authToken;
     }

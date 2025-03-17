@@ -10,6 +10,5 @@ public interface ServerCommunicator {
     void reset();
     int createGame(String gameName);
     HashSet<GameData> listGames();
-    GameData getGame(int gameId);
     boolean joinGame(int gameId, String playerColor);
 }
