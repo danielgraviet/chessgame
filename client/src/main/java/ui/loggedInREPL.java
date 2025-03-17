@@ -6,6 +6,7 @@ import model.game.GameData;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 import static java.lang.System.out;
@@ -63,16 +64,8 @@ public class loggedInREPL {
                             int gameId = Integer.parseInt(input[1]);
                             out.println("Observing game: " + gameId);
 
-                            Collection<GameData> games = facade.listGames();
-                            GameData targetGame = null;
-                            if (games != null) {
-                                for (GameData game: games) {
-                                    if (game.gameID() == gameId) {
-                                        targetGame = game;
-                                        break;
-                                    }
-                                }
-                            }
+                            // find game by id
+                            GameData targetGame = findGameByID(gameId);
 
                             if (targetGame == null) {
                                 out.println("Game with ID " + gameId + " not found.");
@@ -91,7 +84,31 @@ public class loggedInREPL {
                     } else if (input[0].equals("join") && input.length == 4 && input[1].equals("game")) {
                         if (facade.joinGame(Integer.parseInt(input[2]), input[3])) {
                             out.println("Joined game: " + input[2]);
-                            // add implementation to show that the user joined the game. display the current game info.
+                            // takes the id
+                            try {
+                                int joinGameId = Integer.parseInt(input[2]);
+
+                                // find the correct game
+                                GameData joinedGame = findGameByID(joinGameId);
+
+                                if (joinedGame == null) {
+                                    out.println("Game with ID " + joinGameId + " not found.");
+                                } else {
+                                    // render the game based on the correct perspective
+                                    boolean perspective = (Objects.equals(input[3].toLowerCase(), "white"));
+                                    renderBoard.printBoard(joinedGame.game(), perspective);
+                                    out.println("Observing " + joinedGame.gameName() + ". Type 'exit' to quit.");
+                                    Scanner scanner = new Scanner(System.in);
+
+                                    // have a way for them to exit the game with scanner
+                                    while(!scanner.nextLine().trim().equalsIgnoreCase("exit")) {
+                                        out.println("Type 'exit' to stop observing game.");
+                                    }
+                                }
+                                // render that game based on the team color
+                            } catch (NumberFormatException e) {
+                                out.println("Invalid game ID: " + input[2]);
+                            }
                         } else {
                             out.println("Failed to join game.");
                         }
@@ -120,6 +137,18 @@ public class loggedInREPL {
         Scanner scanner = new Scanner(System.in);
         return scanner.nextLine().trim().split("\\s+");
     }
+
+    private GameData findGameByID(int gameID) {
+        Collection<GameData> games = facade.listGames();
+        if (games != null) {
+            for (GameData game: games) {
+                if (game.gameID() == gameID) {
+                    return game;
+                }
+            }
+        }
+        return null;
+    };
 
     private void printMenu() {
         out.println("""
