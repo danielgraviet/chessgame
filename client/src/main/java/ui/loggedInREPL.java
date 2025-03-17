@@ -1,5 +1,6 @@
 package ui;
 
+import chess.ChessGame;
 import client.ServerFacade;
 import model.game.GameData;
 
@@ -35,21 +36,58 @@ public class loggedInREPL {
             switch (command) {
                 case "list games":
                     out.println("Executing list games...");
-                    Collection<GameData> games = facade.listGames();
-                    if (games == null || games.isEmpty()) {
+                    Collection<GameData> listOfGames = facade.listGames();
+                    if (listOfGames == null || listOfGames.isEmpty()) {
                         out.println("No games found");
                     } else {
-                        out.println("Found " + games.size() + " games");
-                        for (GameData game : games) {
-                            out.println(game);
+                        out.println("Found " + listOfGames.size() + " games");
+
+                        // print header
+                        out.printf("%-8s %-15s %-15s %-15s%n", "Game ID", "White Player", "Black Player", "Game Name");
+                        out.println("-------------------------------------------------------");
+                        for (GameData game : listOfGames) {
+                            String whiteUsername = game.whiteUsername() != null ? game.whiteUsername() : "None";
+                            String blackUsername = game.blackUsername() != null ? game.blackUsername() : "None";
+                            out.printf("%-8d %-15s %-15s %-15s%n",
+                                    game.gameID(),
+                                    whiteUsername,
+                                    blackUsername,
+                                    game.gameName());
                         }
                     }
                     break;
                 default:
                     // multi-word commands
-                    if (input[0].equals("observe") && input.length == 3 && input[1].equals("observe")) {
-                        out.println("Observing game: " + input[2]);
-                        // add observe game function
+                    if (input[0].equals("observe") && input.length == 2) {
+                        try {
+                            int gameId = Integer.parseInt(input[1]);
+                            out.println("Observing game: " + gameId);
+
+                            Collection<GameData> games = facade.listGames();
+                            GameData targetGame = null;
+                            if (games != null) {
+                                for (GameData game: games) {
+                                    if (game.gameID() == gameId) {
+                                        targetGame = game;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (targetGame == null) {
+                                out.println("Game with ID " + gameId + " not found.");
+                            } else {
+                                renderBoard.printBoard(targetGame.game(), true);
+                                out.println("Observing " + targetGame.gameName() + ". Type 'exit' to quit.");
+                                Scanner scanner = new Scanner(System.in);
+                                while(!scanner.nextLine().trim().equalsIgnoreCase("exit")) {
+                                    out.println("Type 'exit' to stop observing game.");
+                                }
+                            }
+                        } catch (NumberFormatException e) {
+                            out.println("Invalid game ID: " + input[1]);
+                        }
+
                     } else if (input[0].equals("join") && input.length == 4 && input[1].equals("game")) {
                         if (facade.joinGame(Integer.parseInt(input[2]), input[3])) {
                             out.println("Joined game: " + input[2]);

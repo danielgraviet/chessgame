@@ -95,7 +95,7 @@ public class ChessBoard {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("  a  b  c  d  e  f  g  h \n");
+        sb.append("\n  a  b  c  d  e  f  g  h \n");
 
         for (int row = 7; row >= 0; row--) {
             sb.append((row + 1)).append(" ");

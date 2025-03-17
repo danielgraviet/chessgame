@@ -107,7 +107,6 @@ public class HttpCommunicator implements ServerCommunicator {
             Object whiteUsernameObject = gameMap.get("whiteUsername");
             Object blackUsernameObject  = gameMap.get("blackUsername");
             Object gameNameObject = gameMap.get("gameName");
-            Object chessGameObject = gameMap.get("chessGame");
 
             // convert from number to int.
             int gameID = ((Number) gameIDObject).intValue();
@@ -117,7 +116,20 @@ public class HttpCommunicator implements ServerCommunicator {
             String blackUsername = blackUsernameObject != null ? blackUsernameObject.toString() : null;
 
             String gameName = gameNameObject.toString();
-            ChessGame chessGame = GSON.fromJson(GSON.toJson(chessGameObject), ChessGame.class);
+            ChessGame chessGame = null;
+            Object chessGameObject = gameMap.get("game");
+            if (chessGameObject != null) {
+                if (chessGameObject instanceof String) {
+                    // System.out.println("Chess Game is instance of String: " + chessGameObject);
+                    chessGame = GSON.fromJson((String) chessGameObject, ChessGame.class);
+                } else if (chessGameObject instanceof Map) {
+                    // System.out.println("Chess Game is instance of Map: " + chessGameObject);
+                    String chessGameJson = GSON.toJson(chessGameObject);
+                    chessGame = GSON.fromJson(chessGameJson, ChessGame.class);
+                }
+            } else {
+                System.out.println("Chess Game object is null: " + gameMap);
+            }
 
             games.add(new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame));
         }
@@ -131,6 +143,11 @@ public class HttpCommunicator implements ServerCommunicator {
         Map<String, Object> response = sendRequest("PUT", "/game", body);
         // signify if it worked.
         return handleAuthResponse(response);
+    }
+
+    public GameData getGame(int gameId) {
+        Map<String, Object> response = sendRequest("GET", "/game/" + gameId, null);
+        return GSON.fromJson(GSON.toJson(response), GameData.class);
     }
 
     // private methods
