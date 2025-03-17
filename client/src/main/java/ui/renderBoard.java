@@ -18,9 +18,9 @@ public class renderBoard {
         String columns = "   a  b  c  d  e  f  g  h   \n";
 
         // variables for different perspectives
-        int startRow = whitePerspective ? 8 : 1;
-        int endRow = whitePerspective ? 0 : 9;
-        int increment = whitePerspective ? -1 : 1;
+        int startRow = whitePerspective ? 1 : 8;
+        int endRow = whitePerspective ? 9 : 0;
+        int increment = whitePerspective ? 1 : -1;
 
         // append top row that display's columns. think of stacking a sandwich
         builder.append(SET_TEXT_COLOR_YELLOW)

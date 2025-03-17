@@ -7,6 +7,6 @@ public class Main {
         var piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
         System.out.println("♕ 240 Chess Client: " + piece);
         ChessGame game = new ChessGame();
-        ui.renderBoard.printBoard(game, false);
+        ui.renderBoard.printBoard(game, true);
     }
 }
