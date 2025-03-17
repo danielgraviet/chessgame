@@ -55,6 +55,9 @@ public class loginREPL {
                 case "help":
                     printMenu();
                     break;
+                    default:
+                        out.println("Please enter a valid command.");
+                        out.println("Type 'help' to get a list of valid commands.");
 
             }
             if (!loggedIn) out.print("> ");
@@ -70,10 +73,10 @@ public class loginREPL {
     private void printMenu() {
         out.println("""
                 Available commands:
-                    register: <username> <password> <email> - Register a new user.
-                    login: <username> <password> - Login an existing user.
-                    quit: Quit the client.
-                    help: Show this menu
+                    register: "register <username> <password> <email>" - Register a new user.
+                    login: "login <username> <password>" - Login an existing user.
+                    quit: "quit" - Quit the client.
+                    help: "help" - Show this menu
                 """);
     }
 
@@ -84,3 +87,6 @@ public class loginREPL {
         loginREPL.run();
     }
 }
+
+// TO DO:
+// add prompts if the user input is garbage

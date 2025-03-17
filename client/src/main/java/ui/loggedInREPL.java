@@ -153,11 +153,11 @@ public class loggedInREPL {
     private void printMenu() {
         out.println("""
                 Available commands:
-                    Logout: Current user will be logged out.
-                    Create game: <game name> - Creates a new game.
-                    List games: List all games.
-                    Join game: <gameID> <BLACK/WHITE> - Joins a specific game.
-                    Observe game: <gameID> - Observe a game.
+                    Logout: "logout" - Current user will be logged out.
+                    Create game: "create game <game name>" - Creates a new game.
+                    List games: "list games" - List all games.
+                    Join game: "join game <gameID> <BLACK/WHITE>" - Joins a specific game.
+                    Observe game: "observe <gameID>" - Observe a game.
                 """);
     }
 }
