@@ -92,3 +92,7 @@ public class PreLoginREPL {
 
 // TO DO:
 // add prompts if the user input is garbage
+// add help to post login menu
+// white perspective bottom right should be h1, top left should be a8
+// black perspective bottom right should be A8, top left should be h1
+// catch error, join game a WHITE, fails. catch the invalid ID stuff. catch special characters

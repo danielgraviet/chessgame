@@ -15,7 +15,10 @@ public class RenderBoard {
         builder.append(ERASE_SCREEN);
 
         // top and bottom column headings
-        String columns = "   a  b  c  d  e  f  g  h   \n";
+        String columnsWhite = "   a  b  c  d  e  f  g  h   \n";
+        String columnsBlack = "   h  g  f  e  d  b  c  a   \n";
+        String columns = whitePerspective ? columnsWhite : columnsBlack;
+
 
         // variables for different perspectives
         int startRow = whitePerspective ? 1 : 8;
@@ -28,14 +31,19 @@ public class RenderBoard {
                 .append(RESET_TEXT_COLOR);
 
         for (int row = startRow; row != endRow; row += increment) {
+            int displayRow = 9 - row;
 
             // add row numbers
             builder.append(SET_TEXT_COLOR_YELLOW)
-                    .append(row)
+                    .append(displayRow)
                     .append(" ")
                     .append(RESET_TEXT_COLOR);
 
-            for (int col = 1; col <= 8; col++) {
+            int startCol = whitePerspective ? 1 : 8;
+            int endCol = whitePerspective ? 9 : 0;
+            int colIncrement = whitePerspective ? 1 : -1;
+
+            for (int col = startCol; col != endCol; col += colIncrement) {
                 // way to alternate light squares and dark squares w modulo.
                 boolean isLightSquare = (row + col) % 2 == 0;
                 builder.append(isLightSquare ? SET_BG_COLOR_WHITE : SET_BG_COLOR_BLACK);
@@ -53,7 +61,7 @@ public class RenderBoard {
             builder.append(RESET_BG_COLOR)
                     .append(SET_TEXT_COLOR_YELLOW)
                     .append(" ")
-                    .append(row)
+                    .append(displayRow)
                     .append(RESET_TEXT_COLOR)
                     .append("\n");
         }
