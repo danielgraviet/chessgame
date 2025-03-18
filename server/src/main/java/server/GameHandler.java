@@ -76,8 +76,8 @@ public class GameHandler {
                 return createErrorResponse("Error: Invalid join request");
             }
 
-            // get the gameID and teamColor
-            int gameId = joinRequest.gameId();
+            // get the gameId and teamColor
+            int gameID = joinRequest.gameID();
             String teamColorStr = joinRequest.playerColor();
 
             // teamColorStr is getting null, and throwing this error.
@@ -98,7 +98,7 @@ public class GameHandler {
             }
 
             // join the game
-            gameService.joinGame(authToken, gameId, teamColor);
+            gameService.joinGame(authToken, gameID, teamColor);
 
             res.status(200);
             return new Gson().toJson(new EmptyResponse());

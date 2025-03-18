@@ -55,10 +55,16 @@ public class DatabaseTests {
         String gameName = "Test Game";
         TestCreateResult createResult = serverFacade.createGame(new TestCreateRequest(gameName), auth);
 
+
         //join the game
         serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.getGameID()), auth);
         int newRowCount = getDatabaseRows();
         System.out.println("New rows: " + newRowCount);
+
+        // REMOVE WHEN DONE
+        TestListResult preRestartList = serverFacade.listGames(auth);
+        System.out.println("Pre-restart whiteUsername: " + (preRestartList.getGames().length > 0 ? preRestartList.getGames()[0].getWhiteUsername() : "No games"));
+        // REMOVE WHEN DONE
 
         Assertions.assertTrue(initialRowCount < getDatabaseRows(), "No new data added to database");
 

@@ -72,7 +72,9 @@ public class SqlGameDAO implements GameDAO {
             stmt.setString(2, blackUsername);
             stmt.setString(3, gameData.game() != null ? GSON.toJson(gameData.game()) : null);
             stmt.setInt(4, gameData.gameID());
+            System.out.println("DEBUG/ Updating gameID=" + gameData.gameID() + ", whiteUsername=" + whiteUsername);
             int rowsUpdated = stmt.executeUpdate();
+            System.out.println("DEBUG/ Rows updated: " + rowsUpdated);
             if (rowsUpdated == 0) {
                 throw new DataAccessException("Game update failed. Game ID: " + gameData.gameID() + " not found.");
             }

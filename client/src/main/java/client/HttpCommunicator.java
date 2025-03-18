@@ -137,9 +137,9 @@ public class HttpCommunicator implements ServerCommunicator {
         return games;
     }
 
-    public boolean joinGame(int gameId, String playerColor) {
+    public boolean joinGame(int gameID, String playerColor) {
         //Spark.put("/game", gameServer::joinGame);
-        Map<String, Object> body = Map.of("gameId", gameId, "playerColor", playerColor);
+        Map<String, Object> body = Map.of("gameID", gameID, "playerColor", playerColor);
         Map<String, Object> response = sendRequest("PUT", "/game", body);
         // signify if it worked.
         return handleAuthResponse(response);

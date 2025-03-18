@@ -59,7 +59,9 @@ public class GameService {
                     game.game()
             );
 
+            System.out.println("DEBUG/ Before update: gameID=" + gameID + ", whiteUsername=" + username);
             gameDAO.updateGame(updatedGame);
+            System.out.println("DEBUG/ After update: whiteUsername=" + gameDAO.getGameByID(gameID).whiteUsername());
         } else if (teamColor == ChessGame.TeamColor.BLACK) {
             if (game.blackUsername() != null) {
                 throw new DataAccessException("Black user already exists.");
