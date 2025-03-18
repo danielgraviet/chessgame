@@ -88,7 +88,7 @@ public class PostLoginREPL {
     private void handleObserveGame(String gameIdStr) {
         try {
             int gameId = Integer.parseInt(gameIdStr);
-            out.println("Observing game: " + gameId);
+            out.println("Attempting to observe game: " + gameId);
             GameData game = findGameByID(gameId);
             if (game == null) {
                 out.println("Game with ID " + gameId + " not found.");
@@ -109,11 +109,20 @@ public class PostLoginREPL {
     }
 
     private void handleJoinGame(String gameIdStr, String color) {
-        if (facade.joinGame(Integer.parseInt(gameIdStr), color)) {
-            out.println("Joined game: " + gameIdStr);
-            observeJoinedGame(gameIdStr, color);
-        } else {
-            out.println("Failed to join game.");
+        if (gameIdStr == null) {
+            out.println("Error: Game ID cannot be null.");
+            return;
+        }
+        try {
+            int gameId = Integer.parseInt(gameIdStr);
+            if (facade.joinGame(gameId, color)) {
+                out.println("Joined game: " + gameIdStr);
+                observeJoinedGame(gameIdStr, color);
+            } else {
+                out.println("Failed to join game.");
+            }
+        } catch (NumberFormatException e) {
+            out.println("Error: game ID must be a number. You typed: " + gameIdStr);
         }
     }
 
@@ -177,6 +186,7 @@ public class PostLoginREPL {
                     List games: "list games" - List all games.
                     Join game: "join game <gameID> <BLACK/WHITE>" - Joins a specific game.
                     Observe game: "observe <gameID>" - Observe a game.
+                    Help: "help" - Displays this help menu.
                 """);
     }
 }
