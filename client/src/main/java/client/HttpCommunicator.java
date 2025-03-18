@@ -15,7 +15,7 @@ import java.util.Map;
 public class HttpCommunicator implements ServerCommunicator {
     private final String baseUrl;
     private final ServerFacade facade;
-    private final Gson GSON = new Gson();
+    private static final Gson GSON = new Gson();
 
     // this class is like a mailman, and takes care of all the tasks delivering and receiving
     public HttpCommunicator(ServerFacade facade,  String serverName) {

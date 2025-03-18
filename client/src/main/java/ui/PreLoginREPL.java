@@ -6,13 +6,13 @@ import java.util.Scanner;
 
 import static java.lang.System.out;
 
-public class loginREPL {
+public class PreLoginREPL {
     ServerFacade facade;
-    loggedInREPL loggedInREPL;
+    PostLoginREPL loggedInREPL;
 
-    public loginREPL(ServerFacade facade) {
+    public PreLoginREPL(ServerFacade facade) {
         this.facade = facade;
-        this.loggedInREPL = new loggedInREPL(facade, this);
+        this.loggedInREPL = new PostLoginREPL(facade, this);
     }
 
     public void run() {
@@ -60,7 +60,9 @@ public class loginREPL {
                         out.println("Type 'help' to get a list of valid commands.");
 
             }
-            if (!loggedIn) out.print("> ");
+            if (!loggedIn) {
+                out.print("> ");
+            }
         }
         loggedInREPL.run();
     }
@@ -83,7 +85,7 @@ public class loginREPL {
     public static void main(String[] args) {
         String serverName = args.length > 0 ? args[0] : "localhost:8080";
         ServerFacade facade = new ServerFacade(serverName);
-        loginREPL loginREPL = new loginREPL(facade);
+        PreLoginREPL loginREPL = new PreLoginREPL(facade);
         loginREPL.run();
     }
 }

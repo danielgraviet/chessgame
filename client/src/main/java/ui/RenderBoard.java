@@ -8,7 +8,7 @@ import java.util.Objects;
 
 import static ui.EscapeSequences.*;
 
-public class renderBoard {
+public class RenderBoard {
     public static void printBoard(ChessGame game, boolean whitePerspective) {
         ChessBoard board = game.getBoard();
         StringBuilder builder = new StringBuilder();

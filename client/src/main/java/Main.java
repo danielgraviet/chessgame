@@ -1,6 +1,4 @@
 import chess.*;
-import client.*;
-import ui.renderBoard;
 
 public class Main {
     public static void main(String[] args) {
