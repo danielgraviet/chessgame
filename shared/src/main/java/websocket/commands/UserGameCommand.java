@@ -10,18 +10,23 @@ import java.util.Objects;
  */
 public class UserGameCommand {
 
+    // enum field that specifies the type of command.
     private final CommandType commandType;
 
+    // string representing the auth token.
     private final String authToken;
 
+    // keep in mind ID is capitalized.
     private final Integer gameID;
 
+    // basic constructor
     public UserGameCommand(CommandType commandType, String authToken, Integer gameID) {
         this.commandType = commandType;
         this.authToken = authToken;
         this.gameID = gameID;
     }
 
+    // enforces type safety. only these commands can be called.
     public enum CommandType {
         CONNECT,
         MAKE_MOVE,

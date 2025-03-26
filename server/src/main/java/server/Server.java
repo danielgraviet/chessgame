@@ -4,8 +4,8 @@ import dataaccess.*;
 import service.GameService;
 import spark.*;
 import service.UserService;
-import server.UserHandler;
-import server.GameHandler;
+import java.util.concurrent.ConcurrentHashMap;
+import org.eclipse.jetty.websocket.api.Session;
 
 
 
@@ -20,6 +20,8 @@ public class Server {
     AuthDAO authDAO;
     GameDAO gameDAO;
 
+    static ConcurrentHashMap<Session, Integer> sessions = new ConcurrentHashMap<>();
+
     public Server() {
         // this makes all the new objects to store users, auth tokens, and games.
         try {
@@ -28,9 +30,9 @@ public class Server {
             throw new RuntimeException("Failed to create database: " + e.getMessage());
         }
 
-        //this.userDAO = new MemoryUserDAO(); uncomment to pass standard api tests
-//        this.authDAO = new MemoryAuthDAO();
-//        this.gameDAO = new MemoryGameDAO();
+        //this.userDAO = new MemoryUserDAO();
+        //this.authDAO = new MemoryAuthDAO();
+        //this.gameDAO = new MemoryGameDAO();
 
         // this implements the sql database
         this.userDAO = new SqlUserDAO();
@@ -50,6 +52,9 @@ public class Server {
         Spark.port(desiredPort);
 
         Spark.staticFiles.location("web");
+
+        // Websocket
+        Spark.webSocket("/ws", WSHandler.class);
 
         // Register your endpoints and handle exceptions here.
         Spark.post("/user", userServer::register);
