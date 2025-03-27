@@ -13,7 +13,7 @@ public class Main {
         // to run the server, click on Main file and run "Main main"
         // then go to the browser and type in localhost:8080
         Server server = new Server();
-        server.run(8080);
+        server.run(8081);
 
         try {
             MemoryUserDAO userDataDAO = new MemoryUserDAO();

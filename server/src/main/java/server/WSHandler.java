@@ -34,7 +34,9 @@ public class WSHandler {
         System.out.println("Message received: " + message);
 
         try {
-            session.getRemote().sendString("Echo:" + message);
+            if (session.isOpen()) {
+                session.getRemote().sendString("Echo:" + message);
+            }
         } catch (IOException e) {
             System.out.println("Error sending message: " + e.getMessage());
         }
@@ -49,6 +51,16 @@ public class WSHandler {
 
         String closeReason = (reason != null) ? reason : "Unknown reason";
         System.out.println("Client disconnected: " + closeReason + " (Status code: " + statusCode + ")");
+
+        switch (statusCode) {
+            case 1005:
+                System.out.println("Note: 1005 means no status code was received from the client");
+                break;
+                case 1006:
+                    System.out.println("Note: 1006 means weird closure where connection was lost.");
+                    break;
+        }
+
         if (Server.sessions != null) {
             Server.sessions.remove(session);
         }
@@ -62,6 +74,10 @@ public class WSHandler {
 
         if (error != null) {
             error.printStackTrace();
+        }
+
+        if (session != null && Server.sessions != null) {
+            Server.sessions.remove(session);
         }
     }
 

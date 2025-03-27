@@ -57,6 +57,10 @@
         </plugins>
     </build>
 
+    <properties>
+        <jetty.version>9.4.31.v20200723</jetty.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>edu.byu.cs240</groupId>
@@ -102,6 +106,24 @@
             <version>1.0</version>
             <scope>system</scope>
             <systemPath>${pom.basedir}/lib/passoff-dependencies.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+            <version>1.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-server</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-servlet</artifactId>
+            <version>${jetty.version}</version>
         </dependency>
     </dependencies>
 
