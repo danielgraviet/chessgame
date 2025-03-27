@@ -88,6 +88,19 @@ public class GameService {
         }
     }
 
+    public ChessGame getGame(int gameID) throws DataAccessException {
+        GameData gameData = gameDAO.getGameByID(gameID);
+        if (gameData == null) {
+            throw new DataAccessException("Game with ID " + gameID + " not found");
+        }
+        ChessGame game = gameData.game();
+        if (game == null) {
+            throw new DataAccessException("Game state not initialized for ID " + gameID);
+        }
+
+        return game;
+    }
+
     public void clear() throws DataAccessException {
         gameDAO.clear();
     }

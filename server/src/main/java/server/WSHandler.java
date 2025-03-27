@@ -1,13 +1,28 @@
 package server;
 
+import chess.ChessGame;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import dataaccess.DataAccessException;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
+import service.GameService;
+import websocket.commands.UserGameCommand;
+import websocket.messages.*;
+import websocket.responses.WebSocketResponse;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 @WebSocket
 public class WSHandler {
+    private static final Gson gson = new Gson();
+    private static GameService gameService;
+
+    public static void setGameService(GameService service) {
+        gameService = service;
+    }
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
@@ -20,7 +35,6 @@ public class WSHandler {
             System.err.println("onConnect: Server.sessions is null - reinitializing");
             Server.sessions = new ConcurrentHashMap<>();
         }
-        Server.sessions.put(session, 0);
         System.out.println("Total sessions: " + Server.sessions.size());
     }
 
@@ -34,8 +48,30 @@ public class WSHandler {
         System.out.println("Message received: " + message);
 
         try {
-            if (session.isOpen()) {
-                session.getRemote().sendString("Echo:" + message);
+            UserGameCommand command;
+            try {
+                command = gson.fromJson(message, UserGameCommand.class);
+            } catch (JsonSyntaxException e) {
+                sendMessage(session, "Error: Invalid command format - " + e.getMessage());
+                return;
+            }
+
+            // Validate command fields
+            if (command.getCommandType() == null) {
+                sendMessage(session, "Error: Missing or invalid commandType");
+                return;
+            }
+            if (command.getGameID() == null) {
+                sendMessage(session, "Error: Missing or invalid gameID");
+                return;
+            }
+
+            switch (command.getCommandType()) {
+                case CONNECT:
+                    handleConnect(session, command);
+                    break;
+                default:
+                    sendMessage(session, "Command not yet implemented: " + command.getCommandType());
             }
         } catch (IOException e) {
             System.out.println("Error sending message: " + e.getMessage());
@@ -81,4 +117,41 @@ public class WSHandler {
         }
     }
 
+    private void sendMessage(Session session, String message) throws IOException {
+        if (session.isOpen()) {
+            session.getRemote().sendString(message);
+        }
+    }
+
+    private void sendError(Session session, String errorMessage) throws IOException {
+        ErrorMessage error = new ErrorMessage(errorMessage);
+        String jsonResponse = gson.toJson(error);
+        sendMessage(session, jsonResponse);
+        System.out.println("Sent error to client: " + jsonResponse);
+    }
+
+    private void handleConnect(Session session, UserGameCommand command) throws IOException {
+        Integer gameID = command.getGameID();
+        String authToken = command.getAuthToken() != null ? command.getAuthToken() : "anonymous";
+
+        Server.sessions.computeIfAbsent(gameID, k -> new ArrayList<>()).add(session);
+
+        // initialize game
+        ChessGame game;
+        try {
+            game = Server.gameService.getGame(gameID);
+            if (game == null) {
+                sendError(session, "Game ID " + gameID + " does not exist");
+                return;
+            }
+        } catch (DataAccessException e) {
+            sendError(session, "Error retrieving game: " + e.getMessage());
+            return;
+        }
+
+        LoadGameMessage loadGameMessage = new LoadGameMessage(game);
+        String jsonResponse = gson.toJson(loadGameMessage);
+        sendMessage(session, jsonResponse);
+        System.out.println("Sent to client: " + jsonResponse);
+    }
 }

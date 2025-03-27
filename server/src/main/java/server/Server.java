@@ -4,6 +4,8 @@ import dataaccess.*;
 import service.GameService;
 import spark.*;
 import service.UserService;
+
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.jetty.websocket.api.Session;
 
@@ -13,14 +15,14 @@ public class Server {
     UserHandler userServer;
     GameHandler gameServer;
 
-    UserService userService;
-    GameService gameService;
+    static UserService userService;
+    static GameService gameService;
 
     UserDAO userDAO;
     AuthDAO authDAO;
     GameDAO gameDAO;
 
-    static ConcurrentHashMap<Session, Integer> sessions = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<Integer, List<Session>> sessions = new ConcurrentHashMap<>();
 
     public Server() {
         // this makes all the new objects to store users, auth tokens, and games.
@@ -80,6 +82,7 @@ public class Server {
     private Object clear(Request req, Response res) throws DataAccessException {
         // issue resolved, I was clearing auth and users, not the game storage. caused leaks. dg/2.17
         clearDatabase();
+        sessions.clear();
         res.status(200);
         return "{}";
     }
