@@ -13,6 +13,7 @@ import websocket.responses.WebSocketResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @WebSocket
@@ -130,10 +131,31 @@ public class WSHandler {
         System.out.println("Sent error to client: " + jsonResponse);
     }
 
+    private void broadcastMessage(String message, int gameID, Session excludedSession) {
+        // sends message to all the connected sessions that have that gameID?
+        // loop through the sessions, if they have the correct gameID, send them the message?
+        List<Session> gameSessions = Server.sessions.get(gameID);
+        if (gameSessions != null) {
+            for (Session session : gameSessions) {
+                try {
+                    if (session.isOpen() && session != excludedSession) {
+                        session.getRemote().sendString(message);
+                        System.out.println("Broadcast to game " + gameID + " sent message: " + message);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error broadcasting to session: " + e.getMessage());
+                }
+            }
+
+        }
+    }
+
     private void handleConnect(Session session, UserGameCommand command) throws IOException {
         Integer gameID = command.getGameID();
         String authToken = command.getAuthToken() != null ? command.getAuthToken() : "anonymous";
 
+
+        // if the gameID has no active array list to store sessions, it creates a new one.
         Server.sessions.computeIfAbsent(gameID, k -> new ArrayList<>()).add(session);
 
         // initialize game
@@ -152,6 +174,7 @@ public class WSHandler {
         LoadGameMessage loadGameMessage = new LoadGameMessage(game);
         String jsonResponse = gson.toJson(loadGameMessage);
         sendMessage(session, jsonResponse);
+        broadcastMessage(jsonResponse, gameID, session);
         System.out.println("Sent to client: " + jsonResponse);
     }
 }
