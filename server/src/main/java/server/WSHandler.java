@@ -9,6 +9,8 @@ import model.game.GameData;
 import model.users.UserData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import service.GameService;
 import service.UserService;
 import websocket.commands.UserGameCommand;
@@ -23,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @WebSocket
 public class WSHandler {
     private static final Gson gson = new Gson();
+    private static final Logger log = LoggerFactory.getLogger(WSHandler.class);
     private static GameService gameService;
     private static AuthDAO authDAO = new SqlAuthDAO();
     private static GameDAO gameDAO = new SqlGameDAO();
@@ -265,6 +268,7 @@ public class WSHandler {
 
             if (gameData.whiteUsername() != null && username.equals(gameData.whiteUsername())) {
                 playerRole = "WHITE";
+                // is this just supposed to do on or the other? or both?
             } else if (gameData.blackUsername() != null && username.equals(gameData.blackUsername())) {
                 playerRole = "BLACK";
             }
@@ -291,12 +295,8 @@ public class WSHandler {
                     break;
             }
 
-            NotificationMessage notification = new NotificationMessage(
-                    eventType,
-                    username,
-                    notificationTeamColor,
-                    null
-            );
+            String notificationText = String.format("'%s' has joined the game as %s.", username, playerRole);
+            NotificationMessage notification = new NotificationMessage(notificationText);
             String notificationJson = gson.toJson(notification);
             broadcastMessage(notificationJson, gameID, session);
             System.out.println("Broadcast JOIN NOTIFICATION to game " + gameID + ": user=" + username + ", role=" + playerRole);
