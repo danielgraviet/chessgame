@@ -6,16 +6,13 @@ import com.google.gson.JsonSyntaxException;
 import dataaccess.*;
 import model.auth.AuthData;
 import model.game.GameData;
-import model.users.UserData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.GameService;
-import service.UserService;
 import websocket.commands.UserGameCommand;
 import websocket.messages.*;
-import websocket.responses.WebSocketResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -211,10 +208,10 @@ public class WSHandler {
         Integer gameID = command.getGameID();
         String authToken = command.getAuthToken() != null ? command.getAuthToken() : "anonymous";
 
-        if (!validTokenAndID(gameID, authToken, session)) {
+        if (invalidTokenAndID(gameID, authToken, session)) {
             sendError(session, "Error: Missing or invalid authToken/gameID");
             return;
-        };
+        }
 
         List<Session> gameSessions = Server.sessions.computeIfAbsent(gameID, k -> new ArrayList<>());
 
@@ -318,26 +315,88 @@ public class WSHandler {
         Integer gameID = command.getGameID();
         String authToken = command.getAuthToken();
 
-        if (!validTokenAndID(gameID, authToken, session)) {
+        if (invalidTokenAndID(gameID, authToken, session)) {
+            System.err.println("Error: No session list found for game " + gameID + " during makeMove.");
             sendError(session, "Error: Missing or invalid authToken/gameID");
             return;
         };
 
+        List<Session> gameSessions = Server.sessions.get(gameID);
+        if (gameSessions == null) {
+            sendError(session, "Error: GameID: " + gameID + " has NULL sessions.");
+        }
 
+        ChessGame game = null;
+        GameData gameData = null;
+        String username = null;
+        AuthData authData = null;
+
+        try {
+            // authenticate the user
+            authData = authDAO.getUser(authToken);
+            if (authData == null) {
+                sendError(session, "Error: Invalid or expired authentication token.");
+            }
+
+            // output the username
+            username = authData.username();
+            System.out.println("User '" + username + "' attempting to make a move in game " + gameID);
+
+            // get the gameData
+            gameData = gameDAO.getGameByID(gameID);
+            if (gameData == null) {
+                sendError(session, "Error: Game ID " + gameID + " does not exist.");
+            }
+
+            game = gameService.getGame(gameID);
+            if (game == null) {
+                System.err.println("CRITICAL: GameData found but GameService failed to load game " + gameID);
+                sendError(session, "Error: Could not load game logic/state for game ID " + gameID + ".");
+                return;
+            }
+
+            // authorize the move
+            ChessGame.TeamColor playerColor = null;
+            if (username.equals(gameData.whiteUsername())) {
+                playerColor = ChessGame.TeamColor.WHITE;
+            } else if (username.equals(gameData.blackUsername())) {
+                playerColor = ChessGame.TeamColor.BLACK;
+            }
+
+            if (playerColor == null) {
+                sendError(session, "Error: Observers cannot make moves.");
+                return;
+            }
+
+            if (game.getTeamTurn() != playerColor) {
+                sendError(session, "Error: It's not your turn (" + game.getTeamTurn() + "'s turn).");
+                return; // Stop processing
+            }
+
+            if (game.getTeamTurn() == null) { // Add isGameOver() to your ChessGame if needed
+                sendError(session, "Error: The game is already over.");
+                return;
+            }
+
+            // where is the actual update game happening?
+            // what notifications need to be sent?
+
+        } catch (DataAccessException e) {
+            // what errors should I try and catch?
+        }
     }
 
-    private boolean validTokenAndID(Integer gameID, String authToken, Session session) throws IOException {
+    private boolean invalidTokenAndID(Integer gameID, String authToken, Session session) throws IOException {
         if (authToken == null || authToken.isBlank()) {
             sendError(session, "Error: Missing or invalid authToken");
-            return false;
+            return true;
         }
 
         if (gameID == null) {
             sendError(session, "Error: Missing or invalid gameID");
-            return false;
+            return true;
         }
-
-        return true;
+        return false;
     }
     // These will follow a similar pattern: validate auth, get game data, perform action,
     // update game state (via GameService/DAO), and broadcast relevant messages (LOAD_GAME/NOTIFICATION).

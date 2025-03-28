@@ -225,6 +225,14 @@ public class ChessGame {
         return board;
     }
 
+    public boolean isGameOver() {
+        // Get the color of the player whose turn it is
+        TeamColor currentTurnColor = getTeamTurn();
+
+        // Check if the player whose turn it is is in checkmate or stalemate
+        return isInCheckmate(currentTurnColor) || isInStalemate(currentTurnColor);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {

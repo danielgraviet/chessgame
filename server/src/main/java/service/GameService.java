@@ -1,6 +1,8 @@
 package service;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.InvalidMoveException;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
@@ -99,6 +101,46 @@ public class GameService {
         }
 
         return game;
+    }
+
+    public void makeMove(int gameID, ChessMove move, String username, ChessGame.TeamColor playerColor) throws DataAccessException, InvalidMoveException {
+        GameData currentGameData = gameDAO.getGameByID(gameID);
+        if (currentGameData == null) {
+            throw new DataAccessException("Game not found with ID: " + gameID);
+        }
+
+        ChessGame currentGame = currentGameData.game();
+        if (currentGame == null) {
+            throw new DataAccessException("Game state (ChessGame) is missing for game ID: " + gameID);
+        }
+
+        if (currentGame.isGameOver()) {
+            throw new InvalidMoveException("Cannot make move; the game is already over.");
+        }
+
+        if (currentGame.getTeamTurn() != playerColor) {
+            throw new InvalidMoveException("It is currently " + currentGame.getTeamTurn() + "'s turn, not " + playerColor + "'s.");
+        }
+
+        String expectedUsername = (playerColor == ChessGame.TeamColor.WHITE) ? currentGameData.whiteUsername() : currentGameData.blackUsername();
+        if (!username.equals(expectedUsername)) {
+            System.err.printf("Authorization Error: User '%s' attempting move as %s, but expected user is '%s' for game %d%n",
+                    username, playerColor, expectedUsername, gameID);
+            throw new InvalidMoveException("User '" + username + "' is not authorized to make moves for " + playerColor + " in this game.");
+        }
+
+        currentGame.makeMove(move); // This modifies the currentGame object in memory
+
+        GameData updatedGameData = new GameData(
+                currentGameData.gameID(),
+                currentGameData.whiteUsername(),
+                currentGameData.blackUsername(),
+                currentGameData.gameName(),
+                currentGame // Pass the game object that was just modified by currentGame.makeMove(move)
+        );
+
+        gameDAO.updateGame(updatedGameData);
+        System.out.printf("GameService: Move %s successful for user '%s' in game %d. State saved.%n", move, username, gameID);
     }
 
     public void clear() throws DataAccessException {
