@@ -42,7 +42,6 @@ public class Server {
         this.gameDAO = new SqlGameDAO();
 
         userService = new UserService(userDAO, authDAO);
-
         gameService = new GameService(gameDAO, authDAO);
         gameServer = new GameHandler(gameService);
 
@@ -54,6 +53,10 @@ public class Server {
         Spark.port(desiredPort);
 
         Spark.staticFiles.location("web");
+
+        WSHandler.setAuthDAO(this.authDAO);
+        WSHandler.setGameDAO(this.gameDAO);
+        WSHandler.setGameService(gameService);
 
         // Websocket
         Spark.webSocket("/ws", WSHandler.class);

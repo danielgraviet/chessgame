@@ -3,10 +3,14 @@ package server;
 import chess.ChessGame;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import dataaccess.DataAccessException;
+import dataaccess.*;
+import model.auth.AuthData;
+import model.game.GameData;
+import model.users.UserData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import service.GameService;
+import service.UserService;
 import websocket.commands.UserGameCommand;
 import websocket.messages.*;
 import websocket.responses.WebSocketResponse;
@@ -20,9 +24,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WSHandler {
     private static final Gson gson = new Gson();
     private static GameService gameService;
+    private static AuthDAO authDAO = new SqlAuthDAO();
+    private static GameDAO gameDAO = new SqlGameDAO();
 
     public static void setGameService(GameService service) {
         gameService = service;
+    }
+
+    public static void setAuthDAO(AuthDAO dao) {
+        authDAO = dao;
+    }
+
+    public static void setGameDAO(GameDAO dao) {
+        gameDAO = dao;
     }
 
     @OnWebSocketConnect
@@ -71,13 +85,37 @@ public class WSHandler {
                 case CONNECT:
                     handleConnect(session, command);
                     break;
+                case MAKE_MOVE:
+                    // handleMakeMove(session, command); // TODO: Implement later
+                    sendError(session, "Command not yet implemented: MAKE_MOVE");
+                    break;
+                case LEAVE:
+                    // handleLeave(session, command); // TODO: Implement later
+                    sendError(session, "Command not yet implemented: LEAVE");
+                    break;
+                case RESIGN:
+                    // handleResign(session, command); // TODO: Implement later
+                    sendError(session, "Command not yet implemented: RESIGN");
+                    break;
                 default:
-                    sendMessage(session, "Command not yet implemented: " + command.getCommandType());
+                    System.err.println("Unknown command type received: " + command.getCommandType());
+                    sendError(session, "Error: Unknown command type '" + command.getCommandType() + "'");
+                    break;
             }
         } catch (IOException e) {
             System.out.println("Error sending message: " + e.getMessage());
+        } catch (Exception e) {
+            // Catch unexpected errors during command processing
+            System.err.println("Unexpected error processing message: " + e.getMessage());
+            e.printStackTrace(); // Log stack trace for debugging
+            try {
+                sendError(session, "An unexpected server error occurred.");
+            } catch (IOException ioEx) {
+                System.err.println("Failed to send error message after unexpected error: " + ioEx.getMessage());
+            }
         }
     }
+
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
@@ -132,21 +170,37 @@ public class WSHandler {
     }
 
     private void broadcastMessage(String message, int gameID, Session excludedSession) {
-        // sends message to all the connected sessions that have that gameID?
-        // loop through the sessions, if they have the correct gameID, send them the message?
+        if (Server.sessions == null) {
+            System.err.println("broadcastMessage: Server.sessions is null!");
+            return;
+        }
+
         List<Session> gameSessions = Server.sessions.get(gameID);
         if (gameSessions != null) {
-            for (Session session : gameSessions) {
-                try {
-                    if (session.isOpen() && session != excludedSession) {
-                        session.getRemote().sendString(message);
-                        System.out.println("Broadcast to game " + gameID + " sent message: " + message);
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error broadcasting to session: " + e.getMessage());
-                }
+            // create a copy for protect from unwanted changes to original
+            List<Session> sessionsToSendTo;
+            synchronized (gameSessions) {
+                sessionsToSendTo = new ArrayList<>(gameSessions);
             }
 
+            System.out.println("Broadcasting to " + (sessionsToSendTo.size() -1) + " clients in game " + gameID + " (excluding sender)");
+
+            for (Session currentSession : sessionsToSendTo) {
+                // prevent duplicate messages being sent.
+                if (!currentSession.equals(excludedSession)) {
+                    try {
+                        sendMessage(currentSession, message);
+                        System.out.println("Broadcast sent to " + currentSession.getRemoteAddress());
+                    } catch (IOException e) {
+                        System.err.println("IOException broadcasting to session " + currentSession.getRemoteAddress() + ": " + e.getMessage());
+                    } catch (Exception e) {
+                        System.err.println("Unexpected error broadcasting to session " + currentSession.getRemoteAddress() + ": " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } else {
+            System.out.println("No sessions found for game " + gameID + " to broadcast to.");
         }
     }
 
@@ -154,27 +208,120 @@ public class WSHandler {
         Integer gameID = command.getGameID();
         String authToken = command.getAuthToken() != null ? command.getAuthToken() : "anonymous";
 
-
-        // if the gameID has no active array list to store sessions, it creates a new one.
-        Server.sessions.computeIfAbsent(gameID, k -> new ArrayList<>()).add(session);
-
-        // initialize game
-        ChessGame game;
-        try {
-            game = Server.gameService.getGame(gameID);
-            if (game == null) {
-                sendError(session, "Game ID " + gameID + " does not exist");
-                return;
-            }
-        } catch (DataAccessException e) {
-            sendError(session, "Error retrieving game: " + e.getMessage());
+        // error checking
+        if (gameID == null) {
+            sendError(session, "Error: Missing or invalid gameID");
             return;
         }
 
-        LoadGameMessage loadGameMessage = new LoadGameMessage(game);
-        String jsonResponse = gson.toJson(loadGameMessage);
-        sendMessage(session, jsonResponse);
-        broadcastMessage(jsonResponse, gameID, session);
-        System.out.println("Sent to client: " + jsonResponse);
+        if (authToken == null || authToken.isBlank()) {
+            sendError(session, "Error: Missing or invalid authToken");
+            return;
+        }
+
+
+        List<Session> gameSessions = Server.sessions.computeIfAbsent(gameID, k -> new ArrayList<>());
+
+        ChessGame game = null;
+        GameData gameData = null;
+        AuthData authData = null;
+        String username = "UnknownUser";
+        String playerRole = "Observer";
+
+        try {
+
+            authData = authDAO.getUser(authToken);
+            if (authData == null) {
+                sendError(session, "Error: Invalid or expired authentication token.");
+                return;
+            }
+            username = authData.username();
+            System.out.println("User '" + username + "' attempting to connect to game " + gameID);
+
+
+            gameData = gameDAO.getGameByID(gameID);
+            if (gameData == null) {
+                sendError(session, "Error: Game ID " + gameID + " does not exist.");
+                return;
+            }
+
+            // null pointer exception here.
+            game = gameService.getGame(gameID);
+            if (game == null) {
+                System.err.println("CRITICAL: GameData found but GameService could not load game " + gameID);
+                sendError(session, "Error: Could not load game logic/state for game ID " + gameID + ".");
+                return;
+            }
+
+            synchronized (gameSessions) {
+                if (!gameSessions.contains(session)) {
+                    gameSessions.add(session);
+                    System.out.println("Session for user '" + username + "' added successfully to game " + gameID);
+                } else {
+                    System.out.println("Session for user '" + username + "' already exists in game " + gameID);
+                }
+            }
+
+
+            if (gameData.whiteUsername() != null && username.equals(gameData.whiteUsername())) {
+                playerRole = "WHITE";
+            } else if (gameData.blackUsername() != null && username.equals(gameData.blackUsername())) {
+                playerRole = "BLACK";
+            }
+            System.out.println("User '" + username + "' assigned role: " + playerRole + " for game " + gameID);
+
+
+            LoadGameMessage loadGameMessage = new LoadGameMessage(game);
+            String loadGameJson = gson.toJson(loadGameMessage);
+            sendMessage(session, loadGameJson);
+            System.out.println("Sent LOAD_GAME to connecting client: " + username);
+
+            String eventType = "JOIN";
+            String notificationTeamColor;
+
+            switch (playerRole) {
+                case "WHITE":
+                    notificationTeamColor = "WHITE";
+                    break;
+                case "BLACK":
+                    notificationTeamColor = "BLACK";
+                    break;
+                default: // Observer
+                    notificationTeamColor = null;
+                    break;
+            }
+
+            NotificationMessage notification = new NotificationMessage(
+                    eventType,
+                    username,
+                    notificationTeamColor,
+                    null
+            );
+            String notificationJson = gson.toJson(notification);
+            broadcastMessage(notificationJson, gameID, session);
+            System.out.println("Broadcast JOIN NOTIFICATION to game " + gameID + ": user=" + username + ", role=" + playerRole);
+
+
+        } catch (DataAccessException e) {
+            System.err.println("Data access error during connect for game " + gameID + ", user '" + username + "': " + e.getMessage());
+            e.printStackTrace();
+            sendError(session, "Error connecting to game due to data access issue: " + e.getMessage());
+
+
+        } catch (IOException e) {
+            System.err.println("IO error during connect/broadcast for game " + gameID + ", user '" + username + "': " + e.getMessage());
+            synchronized(gameSessions) { gameSessions.remove(session); }
+
+        } catch (Exception e) {
+            System.err.println("Unexpected error during connect for game " + gameID + ", user '" + username + "': " + e.getMessage());
+            e.printStackTrace();
+            sendError(session, "An unexpected server error occurred while connecting.");
+            synchronized(gameSessions) { gameSessions.remove(session); }
+        }
     }
+
+    // TODO: Implement handleMakeMove, handleLeave, handleResign methods
+    // These will follow a similar pattern: validate auth, get game data, perform action,
+    // update game state (via GameService/DAO), and broadcast relevant messages (LOAD_GAME/NOTIFICATION).
+
 }
