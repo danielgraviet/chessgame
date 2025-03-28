@@ -211,17 +211,10 @@ public class WSHandler {
         Integer gameID = command.getGameID();
         String authToken = command.getAuthToken() != null ? command.getAuthToken() : "anonymous";
 
-        // error checking
-        if (gameID == null) {
-            sendError(session, "Error: Missing or invalid gameID");
+        if (!validTokenAndID(gameID, authToken, session)) {
+            sendError(session, "Error: Missing or invalid authToken/gameID");
             return;
-        }
-
-        if (authToken == null || authToken.isBlank()) {
-            sendError(session, "Error: Missing or invalid authToken");
-            return;
-        }
-
+        };
 
         List<Session> gameSessions = Server.sessions.computeIfAbsent(gameID, k -> new ArrayList<>());
 
@@ -321,6 +314,31 @@ public class WSHandler {
     }
 
     // TODO: Implement handleMakeMove, handleLeave, handleResign methods
+    private void handleMakeMove(Session session, UserGameCommand command) throws IOException {
+        Integer gameID = command.getGameID();
+        String authToken = command.getAuthToken();
+
+        if (!validTokenAndID(gameID, authToken, session)) {
+            sendError(session, "Error: Missing or invalid authToken/gameID");
+            return;
+        };
+
+
+    }
+
+    private boolean validTokenAndID(Integer gameID, String authToken, Session session) throws IOException {
+        if (authToken == null || authToken.isBlank()) {
+            sendError(session, "Error: Missing or invalid authToken");
+            return false;
+        }
+
+        if (gameID == null) {
+            sendError(session, "Error: Missing or invalid gameID");
+            return false;
+        }
+
+        return true;
+    }
     // These will follow a similar pattern: validate auth, get game data, perform action,
     // update game state (via GameService/DAO), and broadcast relevant messages (LOAD_GAME/NOTIFICATION).
 
