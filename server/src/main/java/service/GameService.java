@@ -6,8 +6,10 @@ import chess.InvalidMoveException;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
+import dataaccess.SqlGameDAO;
 import model.auth.AuthData;
 import model.game.GameData;
+import org.eclipse.jetty.server.Authentication;
 
 import java.util.Collection;
 
@@ -141,6 +143,59 @@ public class GameService {
 
         gameDAO.updateGame(updatedGameData);
         System.out.printf("GameService: Move %s successful for user '%s' in game %d. State saved.%n", move, username, gameID);
+    }
+
+    public void resignGame(int gameID, String username) throws DataAccessException, InvalidMoveException {
+        // ends the game, no more moves can be made
+        GameData currentGameData = null;
+        ChessGame currentGame = null;
+
+        // retrieve game data
+        try {
+            GameData gameData = gameDAO.getGameByID(gameID);
+            // validate the game exists
+            if (gameData == null) {
+                throw new DataAccessException("Game with ID " + gameID + " not found");
+            }
+
+            // check if the game is over
+            currentGame = gameData.game();
+
+            if (currentGame == null) {
+                System.err.println("CRITICAL ERROR: Game state (ChessGame) is null for game ID: " + gameID + " during resignation attempt.");
+                throw new DataAccessException("Game state (Game) is missing for game ID: " + gameID);
+            }
+            if (currentGame.isGameOver()) {
+                throw new InvalidMoveException("Cannot resign game; the game is already over.");
+            }
+
+            currentGameData = gameDAO.getGameByID(gameID);
+
+            // authorize the user
+            String whitePlayerName = currentGameData.whiteUsername();
+            String blackPlayerName = currentGameData.blackUsername();
+            boolean isPlayer = (whitePlayerName != null && whitePlayerName.equals(username) || blackPlayerName != null && blackPlayerName.equals(username));
+            if (!isPlayer) {
+                throw new IllegalStateException("User '" + username + "' is not authorized to resign game.");
+            }
+
+            System.out.printf("GameService: User '%s' is resigning from game %d.%n", username, gameID);
+            currentGame.setResigned(true);
+
+            GameData updatedGameData = new GameData(
+                    currentGameData.gameID(),
+                    currentGameData.whiteUsername(),
+                    currentGameData.blackUsername(),
+                    currentGameData.gameName(),
+                    currentGame
+            );
+
+            gameDAO.updateGame(updatedGameData);
+            System.out.println("Send updated game due to resignation attempt: " + updatedGameData);
+
+        } catch (DataAccessException e) {
+            throw new DataAccessException("Error with getting game." + e.getMessage());
+        }
     }
 
     public void clear() throws DataAccessException {

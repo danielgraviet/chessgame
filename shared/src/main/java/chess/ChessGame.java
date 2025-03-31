@@ -12,6 +12,7 @@ public class ChessGame {
 
     private ChessBoard board;
     private TeamColor teamTurn;
+    private boolean resigned = false;
 
     public ChessGame() {
         teamTurn = TeamColor.WHITE;
@@ -53,7 +54,7 @@ public class ChessGame {
         ChessPiece currentPiece = board.getPiece(startPosition);
 
         if (currentPiece == null) {
-            return new HashSet<>();
+            return Collections.emptySet();
         }
         // get all moves for the piece at the position
         Collection<ChessMove> possibleMoves = currentPiece.pieceMoves(board, startPosition);
@@ -230,7 +231,11 @@ public class ChessGame {
         TeamColor currentTurnColor = getTeamTurn();
 
         // Check if the player whose turn it is is in checkmate or stalemate
-        return isInCheckmate(currentTurnColor) || isInStalemate(currentTurnColor);
+        return isInCheckmate(currentTurnColor) || isInStalemate(currentTurnColor) || this.resigned;
+    }
+
+    public void setResigned(boolean resigned) {
+        this.resigned = resigned;
     }
 
     @Override

@@ -103,8 +103,7 @@ public class WSHandler {
                     sendError(session, "Command not yet implemented: LEAVE");
                     break;
                 case RESIGN:
-                    // handleResign(session, command); // TODO: Implement later
-                    sendError(session, "Command not yet implemented: RESIGN");
+                    handleResign(session, baseCommand);
                     break;
                 default:
                     System.err.println("Unknown command type received: " + baseCommand.getCommandType());
@@ -218,7 +217,6 @@ public class WSHandler {
         String authToken = command.getAuthToken() != null ? command.getAuthToken() : "anonymous";
 
         if (invalidTokenAndID(gameID, authToken, session)) {
-            sendError(session, "Error: Missing or invalid authToken/gameID");
             return;
         }
 
@@ -325,8 +323,6 @@ public class WSHandler {
         String authToken = command.getAuthToken();
 
         if (invalidTokenAndID(gameID, authToken, session)) {
-            System.err.println("Error: No session list found for game " + gameID + " during makeMove.");
-            sendError(session, "Error: Missing or invalid authToken/gameID");
             return;
         };
 
@@ -335,7 +331,6 @@ public class WSHandler {
             sendError(session, "Error: GameID: " + gameID + " has NULL sessions.");
         }
 
-        // issue here, cannot be cast
         ChessMove move = command.getMove();
 
         ChessGame game = null;
@@ -391,7 +386,7 @@ public class WSHandler {
                 return; // Stop processing
             }
 
-            if (game.getTeamTurn() == null || game.isGameOver()) { // Add isGameOver() to your ChessGame if needed
+            if (game.getTeamTurn() == null || game.isGameOver()) {
                 sendError(session, "Error: The game is already over.");
                 return;
             }
@@ -436,10 +431,8 @@ public class WSHandler {
             String stateNotificationText = null;
             if (updatedGame.isInCheckmate(opponentColor)) {
                 stateNotificationText = String.format("CHECKMATE! %s (%s) defeated %s (%s).", username, playerColor, opponentUsername, opponentColor);
-                // Optionally update game status in DB to reflect game over
             } else if (updatedGame.isInStalemate(opponentColor)) {
                 stateNotificationText = "STALEMATE! The game is a draw.";
-                // Optionally update game status in DB
             } else if (updatedGame.isInCheck(opponentColor)) {
                 stateNotificationText = String.format("CHECK! %s (%s) is in check.", opponentUsername, opponentColor);
             }
@@ -477,6 +470,52 @@ public class WSHandler {
         }
     }
 
+    private void handleResign(Session session, UserGameCommand command) throws IOException, InvalidMoveException {
+        // basic validation
+        int gameID = command.getGameID();
+        String authToken = command.getAuthToken();
+        String username = null;
+        if (invalidTokenAndID(gameID, authToken, session)) {
+            return;
+        }
+
+        try {
+            AuthData authData = authDAO.getUser(authToken);
+            if (authData == null) {
+                sendError(session, "Error: invalid or expired auth.");
+                return;
+            }
+
+            username = authData.username();
+
+            GameData gameData = gameDAO.getGameByID(gameID);
+            if (gameData == null) {
+                sendError(session, "Error: Game ID " + gameID + "does not exist.");
+                return;
+            }
+
+            gameService.resignGame(gameID, username);
+
+            String notificationText = String.format("'%s' has resigned. The game is over.", username);
+            NotificationMessage notification = new NotificationMessage(notificationText);
+            String notificationJson = gson.toJson(notification);
+
+            broadcastMessage(notificationJson, gameID, null);
+
+        } catch (IllegalStateException e) {
+            log.warn("IllegalStateException during resign for game {}, user '{}': {}", gameID, (username != null ? username : "[Auth Failed]"), e.getMessage());
+            sendError(session, "Error: Cannot resign - " + e.getMessage());
+        } catch (DataAccessException e) {
+            log.error("DataAccessException during resign for game {}, user '{}': {}", gameID, (username != null ? username : "[Auth Failed]"), e.getMessage(), e);
+            sendError(session, "Error resigning due to a data access issue.");
+        } catch (IOException e) {
+            log.error("IOException during resign processing/broadcast for game {}: {}", gameID, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error during resign for game {}, user '{}': {}", gameID, (username != null ? username : "[Unknown]"), e.getMessage(), e);
+            sendError(session, "An unexpected server error occurred while processing your resignation.");
+        }
+    }
+
     private boolean invalidTokenAndID(Integer gameID, String authToken, Session session) throws IOException {
         if (authToken == null || authToken.isBlank()) {
             sendError(session, "Error: Missing or invalid authToken");
@@ -489,7 +528,7 @@ public class WSHandler {
         }
         return false;
     }
-    // These will follow a similar pattern: validate auth, get game data, perform action,
-    // update game state (via GameService/DAO), and broadcast relevant messages (LOAD_GAME/NOTIFICATION).
+
+
 
 }
