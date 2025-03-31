@@ -1,6 +1,8 @@
 package server;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import dataaccess.*;
@@ -11,6 +13,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.GameService;
+import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 import websocket.messages.*;
 
@@ -63,31 +66,37 @@ public class WSHandler {
         System.out.println("Message received: " + message);
 
         try {
-            UserGameCommand command;
+            UserGameCommand baseCommand;
             try {
-                command = gson.fromJson(message, UserGameCommand.class);
+                baseCommand = gson.fromJson(message, UserGameCommand.class);
+                if (baseCommand.getCommandType() == null) {
+                    sendError(session, "Error: Missing or invalid commandType field in message.");
+                    return;
+                }
             } catch (JsonSyntaxException e) {
                 sendMessage(session, "Error: Invalid command format - " + e.getMessage());
                 return;
             }
 
-            // Validate command fields
-            if (command.getCommandType() == null) {
-                sendMessage(session, "Error: Missing or invalid commandType");
-                return;
-            }
-            if (command.getGameID() == null) {
-                sendMessage(session, "Error: Missing or invalid gameID");
-                return;
-            }
-
-            switch (command.getCommandType()) {
+            switch (baseCommand.getCommandType()) {
                 case CONNECT:
-                    handleConnect(session, command);
+                    handleConnect(session, baseCommand);
                     break;
                 case MAKE_MOVE:
-                    // handleMakeMove(session, command); // TODO: Implement later
-                    sendError(session, "Command not yet implemented: MAKE_MOVE");
+                    try {
+                        // Deserialize the SAME message string, but now into the specific subclass
+                        MakeMoveCommand makeMoveCommand = gson.fromJson(message, MakeMoveCommand.class);
+                        // Basic check if move field deserialized correctly (might be null if JSON was wrong)
+                        if (makeMoveCommand.getMove() == null) {
+                            sendError(session, "Error: Missing or invalid 'move' field for MAKE_MOVE command.");
+                            return;
+                        }
+                        // Now pass the correctly typed object
+                        handleMakeMove(session, makeMoveCommand);
+                    } catch (JsonSyntaxException e) {
+                        System.err.println("Error deserializing MAKE_MOVE: " + e.getMessage());
+                        sendError(session, "Error: Invalid format for MAKE_MOVE command.");
+                    }
                     break;
                 case LEAVE:
                     // handleLeave(session, command); // TODO: Implement later
@@ -98,8 +107,8 @@ public class WSHandler {
                     sendError(session, "Command not yet implemented: RESIGN");
                     break;
                 default:
-                    System.err.println("Unknown command type received: " + command.getCommandType());
-                    sendError(session, "Error: Unknown command type '" + command.getCommandType() + "'");
+                    System.err.println("Unknown command type received: " + baseCommand.getCommandType());
+                    sendError(session, "Error: Unknown command type '" + baseCommand.getCommandType() + "'");
                     break;
             }
         } catch (IOException e) {
@@ -311,7 +320,7 @@ public class WSHandler {
     }
 
     // TODO: Implement handleMakeMove, handleLeave, handleResign methods
-    private void handleMakeMove(Session session, UserGameCommand command) throws IOException {
+    private void handleMakeMove(Session session, MakeMoveCommand command) throws IOException, InvalidMoveException {
         Integer gameID = command.getGameID();
         String authToken = command.getAuthToken();
 
@@ -326,16 +335,25 @@ public class WSHandler {
             sendError(session, "Error: GameID: " + gameID + " has NULL sessions.");
         }
 
+        // issue here, cannot be cast
+        ChessMove move = command.getMove();
+
         ChessGame game = null;
         GameData gameData = null;
         String username = null;
         AuthData authData = null;
+
+        if (gameID == null || authToken == null || authToken.isBlank() || move == null) {
+            sendError(session, "Error: Missing required fields (gameID, authToken, move) for MAKE_MOVE.");
+            return;
+        }
 
         try {
             // authenticate the user
             authData = authDAO.getUser(authToken);
             if (authData == null) {
                 sendError(session, "Error: Invalid or expired authentication token.");
+                return;
             }
 
             // output the username
@@ -373,16 +391,89 @@ public class WSHandler {
                 return; // Stop processing
             }
 
-            if (game.getTeamTurn() == null) { // Add isGameOver() to your ChessGame if needed
+            if (game.getTeamTurn() == null || game.isGameOver()) { // Add isGameOver() to your ChessGame if needed
                 sendError(session, "Error: The game is already over.");
                 return;
             }
 
-            // where is the actual update game happening?
-            // what notifications need to be sent?
+            // where the actual change of the game occurs.
+            gameService.makeMove(gameID, move, username, playerColor);
+            System.out.println("Move validated and executed successfully for game " + gameID);
+
+            // assume it has been successful, so now we broadcast the updates.
+
+            // get the updated game.
+            ChessGame updatedGame = gameService.getGame(gameID);
+            if (updatedGame == null) {
+                System.err.println("CRITICAL: Game state is null after successful move and save for game " + gameID);
+                sendError(session, "Internal server error after making move.");
+                return;
+            }
+
+            LoadGameMessage loadGameMessage = new LoadGameMessage(updatedGame);
+            String loadGameJson = gson.toJson(loadGameMessage);
+            broadcastMessage(loadGameJson, gameID, null); // null = no exclusions
+            System.out.println("Broadcast LOAD_GAME (after move) to all in game " + gameID);
+
+            String moveDescription = String.format("'%s' (%s) moved %s from %s to %s%s.",
+                    username,
+                    playerColor,
+                    updatedGame.getBoard().getPiece(move.getEndPosition()).getPieceType(),
+                    move.getStartPosition().toString(),
+                    move.getEndPosition().toString(),
+                    move.getPromotionPiece() != null ? " promoting to " + move.getPromotionPiece() : ""); // Add promotion info
+
+            NotificationMessage moveNotification = new NotificationMessage(moveDescription); // Use the simple Notification structure
+            String moveNotificationJson = gson.toJson(moveNotification);
+            broadcastMessage(moveNotificationJson, gameID, session); // Exclude the player who made the move
+            System.out.println("Broadcast MOVE NOTIFICATION to others in game " + gameID);
+
+
+            ChessGame.TeamColor opponentColor = (playerColor == ChessGame.TeamColor.WHITE) ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
+            String opponentUsername = (playerColor == ChessGame.TeamColor.WHITE) ? gameData.blackUsername() : gameData.whiteUsername();
+            opponentUsername = (opponentUsername == null) ? "[Opponent]" : "'" + opponentUsername + "'"; // Handle case where opponent spot might be empty
+
+            String stateNotificationText = null;
+            if (updatedGame.isInCheckmate(opponentColor)) {
+                stateNotificationText = String.format("CHECKMATE! %s (%s) defeated %s (%s).", username, playerColor, opponentUsername, opponentColor);
+                // Optionally update game status in DB to reflect game over
+            } else if (updatedGame.isInStalemate(opponentColor)) {
+                stateNotificationText = "STALEMATE! The game is a draw.";
+                // Optionally update game status in DB
+            } else if (updatedGame.isInCheck(opponentColor)) {
+                stateNotificationText = String.format("CHECK! %s (%s) is in check.", opponentUsername, opponentColor);
+            }
+
+            if (stateNotificationText != null) {
+                NotificationMessage stateNotification = new NotificationMessage(stateNotificationText);
+                String stateNotificationJson = gson.toJson(stateNotification);
+                broadcastMessage(stateNotificationJson, gameID, null); // Notify ALL
+                System.out.println("Broadcast GAME STATE NOTIFICATION to all in game " + gameID + ": " + stateNotificationText);
+            }
+
+        } catch (InvalidMoveException e) {
+            // Handle illegal chess move attempts
+            System.out.println("Invalid move attempted by " + username + " in game " + gameID + ": " + e.getMessage());
+            sendError(session, "Error: Invalid move - " + e.getMessage());
+            // Do not proceed further
 
         } catch (DataAccessException e) {
-            // what errors should I try and catch?
+            // Handle errors during database access (authentication, game load, game save)
+            System.err.println("Data access error processing move for game " + gameID + ", user '" + username + "': " + e.getMessage());
+            e.printStackTrace();
+            sendError(session, "Error processing move: A database error occurred. " + e.getMessage());
+            // Do not proceed further
+
+        } catch (IOException e) {
+            // Catch IO exceptions specifically from sendError/broadcastMessage within the try
+            System.err.println("IO error during make move processing/broadcast for game " + gameID + ": " + e.getMessage());
+            // Session might be closed, often don't need to send another error
+
+        } catch (Exception e) {
+            // Catch any other unexpected errors during the process
+            System.err.println("Unexpected error processing move for game " + gameID + ", user '" + username + "': " + e.getMessage());
+            e.printStackTrace();
+            sendError(session, "An unexpected server error occurred while processing your move.");
         }
     }
 
