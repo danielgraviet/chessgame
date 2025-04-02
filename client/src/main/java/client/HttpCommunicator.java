@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import model.game.GameData;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -19,39 +20,64 @@ public class HttpCommunicator implements ServerCommunicator {
 
     // this class is like a mailman, and takes care of all the tasks delivering and receiving
     public HttpCommunicator(ServerFacade facade,  String serverName) {
-        this.baseUrl = "http://" + serverName;
+        // 1. Handle null input first
+        if (serverName == null) {
+            throw new IllegalArgumentException("Server URL cannot be null");
+        }
+
+        // 2. Use a temporary variable to hold the potentially modified URL
+        String processedUrl = serverName;
+
+        // 3. Modify the temporary variable if needed
+        if (processedUrl.endsWith("/")) {
+            processedUrl = processedUrl.substring(0, processedUrl.length() - 1);
+        }
+
+        // 4. Assign the final, processed value *ONCE* to the final field
+        this.baseUrl = processedUrl;
+
+        // 5. Assign other final fields
         this.facade = facade;
     }
 
     public boolean register(String username, String password, String email) {
         // think of this as a python dictionary.
+        System.out.println("DEBUG COMM [REGISTER] Called with: user=" + username); // Debug start
         Map<String, String> body = Map.of("username", username, "password", password, "email", email);
         Map<String, Object> response = sendRequest("POST", "/user", body);
+        System.out.println("DEBUG COMM [REGISTER] Raw response received: " + response);
         return handleAuthResponse(response);
     }
 
 
     public boolean login(String username, String password) {
+        System.out.println("DEBUG COMM [LOGIN] Called with: user=" + username);
         Map<String, String> body = Map.of("username", username, "password", password);
         Map<String, Object> response = sendRequest("POST", "/session", body);
+        System.out.println("DEBUG COMM [LOGIN] Raw response received: " + response);
         return handleAuthResponse(response);
     }
 
     public boolean logout(){
+        System.out.println("DEBUG COMM [LOGOUT] Called"); // Debug start
         // this should log out the user, and remove the auth token
         Map<String, Object> response = sendRequest("DELETE", "/session", null);
+        System.out.println("DEBUG COMM [LOGOUT] Raw response received: " + response);
         return handleAuthResponse(response);
     }
 
     public void reset() {
+        System.out.println("DEBUG COMM [RESET] Called"); // Debug start
         Map<String, Object> response = sendRequest("DELETE", "/db", null);
         if (response.containsKey("error")) {
+            System.err.println("ERROR COMM [RESET] Failed: " + response.get("error"));
             throw new RuntimeException("Failed te reset server: " + response);
         }
         System.out.println("System Reset: " + response);
     }
 
     public int createGame(String gameName) {
+        System.out.println("DEBUG COMM [CREATE_GAME] Called with: name=" + gameName); // Debug start
         Map<String, Object> response = sendRequest("POST", "/game", Map.of("gameName", gameName));
 
         // simple error checking
@@ -71,6 +97,7 @@ public class HttpCommunicator implements ServerCommunicator {
         } else if (gameID instanceof Number) {
             return ((Number) gameID).intValue();
         } else {
+
             throw new RuntimeException("gameID is not an integer: " + response);
         }
     }
@@ -139,6 +166,7 @@ public class HttpCommunicator implements ServerCommunicator {
 
     public boolean joinGame(int gameID, String playerColor) {
         //Spark.put("/game", gameServer::joinGame);
+        System.out.println("DEBUG COMM [JOIN_GAME] Called with: gameID=" + gameID + ", color=" + playerColor);
         Map<String, Object> body = Map.of("gameID", gameID, "playerColor", playerColor);
         Map<String, Object> response = sendRequest("PUT", "/game", body);
         // signify if it worked.
@@ -146,24 +174,73 @@ public class HttpCommunicator implements ServerCommunicator {
     }
     // private methods
     private Map<String, Object> sendRequest(String method, String endpoint, Map<String, ?> body) {
+        System.out.println("---"); // Separator for clarity
+        System.out.println("DEBUG COMM [SEND] >> Method: " + method);
+        System.out.println("DEBUG COMM [SEND] >> Endpoint: " + endpoint);
+        System.out.println("DEBUG COMM [SEND] >> Body: " + (body == null ? "null" : GSON.toJson(body)));
+        System.out.println("DEBUG COMM [SEND] >> Auth Token Used: " + facade.getAuthToken());
+        HttpURLConnection connection = null;
+        Map<String, Object> responseMap = null;
         try {
-            HttpURLConnection connection = setupConnection(method, endpoint, body);
-            int status = connection.getResponseCode();
-            if (status == 400) {
-                return Map.of("error", "HTTP" + status);
-            } else if (status == 401) {
-                return Map.of("error", " 401: Unauthorized");
-            } else if (status == 403) {
-                return Map.of("error", " 403: Forbidden");
-            } else if (status == 500) {
-                return Map.of("error", " 500: Internal Server Error");
+            connection = setupConnection(method, endpoint, body);
+            int status = connection.getResponseCode(); // Execute the request
+            System.out.println("DEBUG COMM [RECV] << Status: " + status); // Log the actual status code
+
+            InputStream responseStream = null;
+            // Check if the status code indicates success (usually 2xx)
+            if (status >= 200 && status < 300) {
+                responseStream = connection.getInputStream();
+            } else {
+                // If status code indicates an error (4xx or 5xx), use the error stream
+                responseStream = connection.getErrorStream();
             }
 
-            try (var reader = new InputStreamReader(connection.getInputStream())) {
-                return GSON.fromJson(reader, Map.class);
+            // Try to read and parse the response body from the appropriate stream
+            if (responseStream != null) {
+                try (var reader = new InputStreamReader(responseStream)) {
+                    // Use a more flexible type if responses aren't always Maps
+                    responseMap = GSON.fromJson(reader, Map.class);
+                } catch (Exception parseEx) {
+                    // Handle cases where the response body isn't valid JSON or isn't a Map
+                    System.err.println("ERROR COMM [RECV] Failed to parse response body: " + parseEx.getMessage());
+                    // Create an error map even if parsing fails, including the status
+                    responseMap = Map.of("error", "Failed to parse response (Status: " + status + ")", "status", status);
+                }
             }
+
+            // If after all that, responseMap is still null (e.g., empty 204 No Content, or stream error), create a map
+            if (responseMap == null) {
+                if (status >= 200 && status < 300) {
+                    // Success status but no body / parse error
+                    responseMap = Map.of("status", status); // Indicate success status
+                } else {
+                    // Error status and couldn't read/parse body
+                    responseMap = Map.of("error", "Server returned status " + status + " with no parseable body", "status", status);
+                }
+            }
+
+            // If it was an error status, ensure the map contains an "error" key for handleAuthResponse
+            if (status >= 400 && !responseMap.containsKey("error") && responseMap.containsKey("message")) {
+                // If server sent {"message": "..."}, promote it to "error" for client logic
+                responseMap = new java.util.HashMap<>(responseMap); // Make mutable copy
+                responseMap.put("error", responseMap.get("message"));
+            } else if (status >= 400 && !responseMap.containsKey("error")) {
+                // Ensure an error key exists if it's an error status but no message/error key was parsed
+                responseMap = new java.util.HashMap<>(responseMap); // Make mutable copy
+                responseMap.put("error", "HTTP Error: " + status);
+            }
+
+
+            return responseMap;
+
         } catch (IOException e) {
-            return Map.of("error", e.getMessage());
+            // Network errors, connection refused, DNS issues etc.
+            System.err.println("ERROR COMM [SEND] Network/Connection IOException: " + e.getMessage());
+            return Map.of("error", "Connection error: " + e.getMessage()); // More specific than just "http"
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 

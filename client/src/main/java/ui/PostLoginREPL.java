@@ -1,5 +1,6 @@
 package ui;
 
+import chess.ChessGame;
 import client.ServerFacade;
 import model.game.GameData;
 
@@ -7,6 +8,9 @@ import java.sql.ClientInfoStatus;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Scanner;
+
+import static java.lang.System.getenv;
+import static ui.EscapeSequences.*;
 
 import static java.lang.System.out;
 
@@ -16,13 +20,15 @@ public class PostLoginREPL {
     private final ServerFacade facade;
     private final PreLoginREPL loginREPL;
     private final Scanner scanner = new Scanner(System.in);
+    private final String serverDomain;
 
     // establish connection to a WS.
     // prepare for receiving a message.
 
-    public PostLoginREPL(ServerFacade facade, PreLoginREPL loginREPL) {
+    public PostLoginREPL(ServerFacade facade, PreLoginREPL loginREPL, String serverDomain) {
         this.facade = facade;
         this.loginREPL = loginREPL;
+        this.serverDomain = serverDomain;
     }
 
     public void run() {
@@ -53,15 +59,19 @@ public class PostLoginREPL {
     }
 
     private boolean processMultiWordCommands(String[] input) {
-        if (input[0].equals("observe") && input.length == 2) {
+        String commandPrefix = input.length > 0 ? input[0].toLowerCase() : "";
+        if (commandPrefix.equals("observe") && input.length == 2) {
             handleObserveGame(input[1]);
-        } else if (input[0].equals("join") && input.length == 4 && input[1].equals("game")) {
-            handleJoinGame(input[2], input[3]);
-        } else if (input[0].equals("create") && input.length == 3 && input[1].equals("game")) {
-            handleCreateGame(input[2]);
-        } else {
-            out.println("Unknown command: " + String.join(" ", input));
-            out.println("Type 'help' for available commands.");
+        } else if (commandPrefix.equals("join") && input.length == 3) {
+            handleJoinGame(input[1], input[2]);
+        } else if (commandPrefix.equals("create") && input.length == 2) {
+            handleCreateGame(input[1]);
+        } else if (commandPrefix.equals("list") && input.length == 2 && input[1].equalsIgnoreCase("games")) {
+            listGames();
+        }
+        else {
+                out.println("Unknown command: " + String.join(" ", input));
+                out.println("Type 'help' for available commands.");
         }
         return true;
     }
@@ -90,17 +100,39 @@ public class PostLoginREPL {
     private void handleObserveGame(String gameIdStr) {
         try {
             int gameId = Integer.parseInt(gameIdStr);
-            out.println("Attempting to observe game: " + gameId);
-            GameData game = findGameByID(gameId);
-            if (game == null) {
-                out.println("Game with ID " + gameId + " not found.");
+            GameData gameData = findGameByID(gameId);
+
+            if (gameData == null || gameData.game() == null) {
+                out.println(SET_TEXT_COLOR_RED + "Game " + gameId + " not found or has no game state." + RESET_TEXT_COLOR);
                 return;
             }
-            observeGame(game);
+
+            String authToken = facade.getAuthToken(); // Assuming facade has a getter
+            if (authToken == null) {
+                out.println(SET_TEXT_COLOR_RED + "Error: Not properly logged in (no auth token)." + RESET_TEXT_COLOR);
+                return;
+            }
+
+            out.println("Entering observer mode for game: " + gameData.gameName() + " (ID: " + gameId + ")");
+
+            // --- Create and run GameplayREPL ---
+            // Observer has null playerColor
+            GameplayREPL gameplayRepl = new GameplayREPL(facade, serverDomain, gameId, null, authToken, this, gameData.game());
+            gameplayRepl.run(); // This blocks until the user leaves the game
+
+            // --- Code here runs AFTER GameplayREPL finishes ---
+            System.out.print(ERASE_SCREEN); // Clear screen after leaving game
+            out.println("Returned to main menu.");
+
+
         } catch (NumberFormatException e) {
-            out.println("Invalid game ID: " + gameIdStr);
+            out.println(SET_TEXT_COLOR_RED + "Invalid game ID: " + gameIdStr + ". Must be a number." + RESET_TEXT_COLOR);
+        } catch (Exception e) {
+            out.println(SET_TEXT_COLOR_RED + "Error entering observer mode: " + e.getMessage() + RESET_TEXT_COLOR);
+            e.printStackTrace();
         }
     }
+
 
     private void observeGame(GameData game) {
         RenderBoard.printBoard(game.game(), true);
@@ -111,20 +143,59 @@ public class PostLoginREPL {
     }
 
     private void handleJoinGame(String gameIdStr, String color) {
-        if (gameIdStr == null) {
-            out.println("Error: Game ID cannot be null.");
-            return;
-        }
         try {
             int gameId = Integer.parseInt(gameIdStr);
-            if (facade.joinGame(gameId, color)) {
-                out.println("Joined game: " + gameIdStr);
-                observeJoinedGame(gameIdStr, color);
+            String lowerColor = color.toLowerCase();
+            ChessGame.TeamColor playerColor;
+
+            if (lowerColor.equals("white")) {
+                playerColor = ChessGame.TeamColor.WHITE;
+            } else if (lowerColor.equals("black")) {
+                playerColor = ChessGame.TeamColor.BLACK;
             } else {
-                out.println("Failed to join game.");
+                out.println(SET_TEXT_COLOR_RED + "Invalid color: '" + color + "'. Use 'WHITE' or 'BLACK'." + RESET_TEXT_COLOR);
+                return;
             }
+
+            // --- Call Facade to Join (HTTP PUT /game) ---
+            // This reserves the spot on the server BEFORE connecting via WebSocket
+            boolean joinedSuccessfully = facade.joinGame(gameId, lowerColor); // Use lowercase color for facade if needed
+
+            if (!joinedSuccessfully) {
+                // Facade should have printed the error from the HTTP response
+                out.println(SET_TEXT_COLOR_RED + "Failed to join game via HTTP. See previous error." + RESET_TEXT_COLOR);
+                return;
+            }
+
+            // --- Successfully joined via HTTP, now get GameData and connect WebSocket ---
+            GameData gameData = findGameByID(gameId); // Fetch game data again to get current state
+            if (gameData == null || gameData.game() == null) {
+                out.println(SET_TEXT_COLOR_RED + "Error: Joined game " + gameId + " but couldn't retrieve its state." + RESET_TEXT_COLOR);
+                // Maybe try to leave game via HTTP? Or just fail.
+                return;
+            }
+
+            String authToken = facade.getAuthToken(); // Get token
+            if (authToken == null) {
+                out.println(SET_TEXT_COLOR_RED + "Error: Not properly logged in (no auth token)." + RESET_TEXT_COLOR);
+                return;
+            }
+
+            out.println("Successfully joined game: " + gameData.gameName() + " (ID: " + gameId + ") as " + playerColor);
+
+            // --- Create and run GameplayREPL ---
+            GameplayREPL gameplayRepl = new GameplayREPL(facade, serverDomain, gameId, playerColor, authToken, this, gameData.game());
+            gameplayRepl.run(); // Blocks until user leaves
+
+            // --- Code here runs AFTER GameplayREPL finishes ---
+            System.out.print(ERASE_SCREEN); // Clear screen after leaving game
+            out.println("Returned to main menu.");
+
         } catch (NumberFormatException e) {
-            out.println("Error: game ID must be a number. You typed: " + gameIdStr);
+            out.println(SET_TEXT_COLOR_RED + "Invalid game ID: " + gameIdStr + ". Must be a number." + RESET_TEXT_COLOR);
+        } catch (Exception e) {
+            out.println(SET_TEXT_COLOR_RED + "Error joining game: " + e.getMessage() + RESET_TEXT_COLOR);
+            e.printStackTrace();
         }
     }
 
@@ -149,17 +220,32 @@ public class PostLoginREPL {
 
     private void handleCreateGame(String gameName) {
         out.println("Creating game...");
-        facade.createGame(gameName);
-        out.println("Created game " + gameName);
+        try {
+            // Assuming facade.createGame returns the new GameData or at least the ID
+            int newGameID = facade.createGame(gameName);
+            if (newGameID > 0) {
+                out.println("Successfully created game '" + gameName + "' with ID: " + newGameID);
+            } else {
+                out.println(SET_TEXT_COLOR_RED + "Failed to create game '" + gameName + "'. Server did not return a valid game ID." + RESET_TEXT_COLOR);
+                out.println(SET_TEXT_COLOR_YELLOW + "(Check previous messages or server logs for details)." + RESET_TEXT_COLOR);
+            }
+        } catch (Exception e) {
+            out.println(SET_TEXT_COLOR_RED + "An error occurred while trying to create the game: " + e.getMessage() + RESET_TEXT_COLOR);
+            // Optionally print stack trace for debugging
+            // e.printStackTrace();
+        }
     }
 
     private boolean handleLogout() {
+        // Close any potential lingering WS connection if needed? Unlikely here.
         if (facade.logout()) {
-            out.println("You have logged out");
-            loginREPL.run();
-            return false;
+            out.println("You have logged out.");
+            // Don't call loginREPL.run() here. Let the main loop exit.
+            return false; // Signal to stop the loop
+        } else {
+            out.println(SET_TEXT_COLOR_RED + "Logout failed (check facade logs/output)." + RESET_TEXT_COLOR);
+            return true; // Stay logged in
         }
-        return true;
     }
 
     private String[] getUserInput() {
@@ -181,14 +267,14 @@ public class PostLoginREPL {
     };
 
     private void printMenu() {
-        out.println("""
+        out.println(SET_TEXT_COLOR_BLUE + """
                 Available commands:
-                    Logout: "logout" - Current user will be logged out.
-                    Create game: "create game <game name>" - Creates a new game.
-                    List games: "list games" - List all games.
-                    Join game: "join game <gameID> <BLACK/WHITE>" - Joins a specific game.
-                    Observe game: "observe <gameID>" - Observe a game.
-                    Help: "help" - Displays this help menu.
-                """);
+                  logout           - Log out the current user.
+                  create <NAME>    - Create a new game.
+                  list games       - List all available games.
+                  join <ID> <COLOR>- Join a game as WHITE or BLACK (e.g., join 1234 WHITE).
+                  observe <ID>     - Observe a game (e.g., observe 1234).
+                  help             - Show this menu.
+                """ + RESET_TEXT_COLOR);
     }
 }

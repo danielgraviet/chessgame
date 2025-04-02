@@ -9,61 +9,91 @@ import static java.lang.System.out;
 public class PreLoginREPL {
     ServerFacade facade;
     PostLoginREPL loggedInREPL;
+    private final String serverDomain;
 
-    public PreLoginREPL(ServerFacade facade) {
+    public PreLoginREPL(ServerFacade facade, String serverDomain) {
         this.facade = facade;
-        this.loggedInREPL = new PostLoginREPL(facade, this);
+        this.serverDomain = serverDomain;
+        this.loggedInREPL = new PostLoginREPL(facade, this, this.serverDomain);
     }
 
     public void run() {
         boolean loggedIn = false;
         out.print("Chess Game Started. Enter 'help' to get started.");
-        out.print("\n>");
+        // Use a consistent prompt style
+        out.print("\n[LOGGED OUT] >>> ");
         while (!loggedIn) {
             String[] input = getUserInput();
-            switch (input[0]) {
+
+            // --- Handle empty input before the switch ---
+            if (input == null || input.length == 0 || input[0].isEmpty()) {
+                out.println("Please enter a command.");
+                out.print("[LOGGED OUT] >>> "); // Reprint prompt
+                continue; // Go to the next loop iteration
+            }
+
+            // --- Use lowercase command for case-insensitive matching ---
+            String command = input[0].toLowerCase();
+
+            switch (command) {
                 case "register":
-                    // needs len of 4 bc "register, username, password, email"
                     if (input.length != 4){
-                        out.println("Please enter username, password, and email.");
-                        break;
+                        out.println("Usage: register <USERNAME> <PASSWORD> <EMAIL>");
+                        break; // Break after usage message
                     }
+                    // Attempt registration
                     if (facade.register(input[1], input[2], input[3])) {
-                        out.println("User successfully registered.");
-                        loggedIn = true;
-                        break;
+                        out.println("User successfully registered and logged in.");
+                        loggedIn = true; // Assume auto-login on successful registration
+                    } else {
+                        // Facade should print specific errors (like username taken)
+                        out.println("Registration failed.");
                     }
-                    out.println("Registration failed.");
+                    // --- *** IMPORTANT: Added break to prevent fall-through *** ---
+                    break;
 
                 case "login":
                     if (input.length != 3){
-                        out.println("Please enter username and password.");
-                        break;
+                        out.println("Usage: login <USERNAME> <PASSWORD>");
+                        break; // Break after usage message
                     }
+                    // Attempt login
                     if (facade.login(input[1], input[2])) {
                         out.println("User successfully logged in.");
                         loggedIn = true;
-                        break;
                     } else {
+                        // Facade should print specific errors (like wrong password)
                         out.println("Login failed.");
-                        continue;
+                        // NOTE: Original had 'continue' here. 'break' is usually preferred
+                        // unless you specifically want to skip the prompt reprint below.
+                        // Let's use break for consistency.
                     }
+                    // --- *** IMPORTANT: Ensure break executes for both success/fail *** ---
+                    break;
+
                 case "quit":
-                    out.println("You have quit the client. Goodbye!");
-                    return;
+                    out.println("Exiting Chess Client. Goodbye!");
+                    return; // Exit the run() method entirely
 
                 case "help":
                     printMenu();
+                    // --- *** IMPORTANT: Added break *** ---
                     break;
-                    default:
-                        out.println("Please enter a valid command.");
-                        out.println("Type 'help' to get a list of valid commands.");
 
-            }
+                default:
+                    out.println("Invalid command.");
+                    out.println("Type 'help' for a list of valid commands.");
+                    // Break is good practice even for default, though not strictly needed if last
+                    break;
+            } // End of switch
+
+            // Reprint prompt only if the user is still not logged in AND didn't quit
             if (!loggedIn) {
-                out.print("> ");
+                out.print("[LOGGED OUT] >>> ");
             }
-        }
+        } // End of while loop
+
+        // If the loop finishes (loggedIn is true), run the next REPL
         loggedInREPL.run();
     }
 
@@ -83,9 +113,30 @@ public class PreLoginREPL {
     }
 
     public static void main(String[] args) {
-        String serverName = args.length > 0 ? args[0] : "localhost:8081";
-        ServerFacade facade = new ServerFacade(serverName);
-        PreLoginREPL loginREPL = new PreLoginREPL(facade);
+        String serverHttpUrl = "http://localhost:8081";
+        String serverWsDomain = "localhost:8081";
+
+        if (args.length >= 1) {
+            serverHttpUrl = args[0];
+            try {
+                java.net.URI uri = new java.net.URI(serverHttpUrl);
+                serverWsDomain = uri.getHost() + ":" + uri.getPort();
+                if (uri.getPort() == -1) {
+                    serverWsDomain = uri.getHost() + (uri.getScheme().equals("https") ? ":443" : ":80");
+                }
+            } catch (Exception e) {
+                System.err.println("Warning: Could not parse WebSocket domain from " + serverHttpUrl + ". Using default: " + serverWsDomain);
+            }
+        }
+        if (args.length >= 2) {
+            serverWsDomain = args[1];
+        }
+
+        System.out.println("Connecting to ServerFacade at: " + serverHttpUrl);
+        System.out.println("WebSocket connections will target: " + serverWsDomain);
+
+        ServerFacade facade = new ServerFacade(serverHttpUrl);
+        PreLoginREPL loginREPL = new PreLoginREPL(facade, serverWsDomain);
         loginREPL.run();
     }
 }

@@ -23,7 +23,7 @@ public class WebSocketCommunicator extends Endpoint {
     Session session;
     private final GameHandlerUI uiHandler;
 
-    WebSocketCommunicator(String serverDomain, GameHandlerUI uiHandler) throws Exception {
+    public WebSocketCommunicator(String serverDomain, GameHandlerUI uiHandler) throws Exception {
         if (uiHandler == null) {
             throw new IllegalArgumentException("uiHandler cannot be null");
         }
