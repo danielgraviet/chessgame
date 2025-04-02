@@ -13,6 +13,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.WSHandlerFunctions.HandleConnect;
+import server.WSHandlerFunctions.HandleMakeMove;
 import service.GameService;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
@@ -33,6 +34,7 @@ public class WSHandler {
     private static GameDAO gameDAO = new SqlGameDAO();
     private static ConnectionManager connectionManager;
     private static HandleConnect handleConnect;
+    private static HandleMakeMove handleMakeMove;
 
     public static void setGameService(GameService service) {
         gameService = service;
@@ -52,6 +54,10 @@ public class WSHandler {
 
     public static void setHandleConnect(HandleConnect handleConnect) {
         WSHandler.handleConnect = handleConnect;
+    }
+
+    public static void setHandleMakeMove(HandleMakeMove handleMakeMove) {
+        WSHandler.handleMakeMove = handleMakeMove;
     }
 
     @OnWebSocketConnect
@@ -98,7 +104,7 @@ public class WSHandler {
                             return;
                         }
                         // Now pass the correctly typed object
-                        handleMakeMove(session, makeMoveCommand);
+                        handleMakeMove.handle(session, makeMoveCommand);
                     } catch (JsonSyntaxException e) {
                         System.err.println("Error deserializing MAKE_MOVE: " + e.getMessage());
                         sendError(session, "Error: Invalid format for MAKE_MOVE command.");

@@ -2,6 +2,7 @@ package server;
 
 import dataaccess.*;
 import server.WSHandlerFunctions.HandleConnect;
+import server.WSHandlerFunctions.HandleMakeMove;
 import server.WSHandlerFunctions.HelperFunctions;
 import service.GameService;
 import spark.*;
@@ -28,6 +29,7 @@ public class Server {
 
     // WS Handlers
     HandleConnect handleConnect;
+    HandleMakeMove handleMakeMove;
 
     static ConcurrentHashMap<Integer, List<Session>> sessions = new ConcurrentHashMap<>();
 
@@ -59,6 +61,7 @@ public class Server {
         this.gameServer = new GameHandler(gameService);
 
         this.handleConnect = new HandleConnect(gameService, authDAO, gameDAO, connectionManager, helperFunctions);
+        this.handleMakeMove = new HandleMakeMove(gameService, authDAO, gameDAO, connectionManager, helperFunctions);
     }
 
     public int run(int desiredPort) {
@@ -71,6 +74,7 @@ public class Server {
         WSHandler.setGameService(gameService);
         WSHandler.setConnectionManager(this.connectionManager);
         WSHandler.setHandleConnect(this.handleConnect);
+        WSHandler.setHandleMakeMove(this.handleMakeMove);
 
         // Websocket
         Spark.webSocket("/ws", WSHandler.class);
