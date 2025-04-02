@@ -13,6 +13,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.WSHandlerFunctions.HandleConnect;
+import server.WSHandlerFunctions.HandleLeave;
 import server.WSHandlerFunctions.HandleMakeMove;
 import service.GameService;
 import websocket.commands.MakeMoveCommand;
@@ -35,6 +36,7 @@ public class WSHandler {
     private static ConnectionManager connectionManager;
     private static HandleConnect handleConnect;
     private static HandleMakeMove handleMakeMove;
+    private static HandleLeave handleLeave;
 
     public static void setGameService(GameService service) {
         gameService = service;
@@ -58,6 +60,10 @@ public class WSHandler {
 
     public static void setHandleMakeMove(HandleMakeMove handleMakeMove) {
         WSHandler.handleMakeMove = handleMakeMove;
+    }
+
+    public static void setHandleLeave(HandleLeave handleLeave) {
+        WSHandler.handleLeave = handleLeave;
     }
 
     @OnWebSocketConnect
@@ -111,7 +117,7 @@ public class WSHandler {
                     }
                     break;
                 case LEAVE:
-                    handleLeave(session, baseCommand);
+                    handleLeave.handle(session, baseCommand);
                     break;
                 case RESIGN:
                     handleResign(session, baseCommand);
