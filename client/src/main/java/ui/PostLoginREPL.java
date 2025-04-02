@@ -17,6 +17,8 @@ public class PostLoginREPL {
     private final PreLoginREPL loginREPL;
     private final Scanner scanner = new Scanner(System.in);
 
+    // establish connection to a WS.
+    // prepare for receiving a message.
 
     public PostLoginREPL(ServerFacade facade, PreLoginREPL loginREPL) {
         this.facade = facade;

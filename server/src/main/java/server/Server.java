@@ -108,6 +108,7 @@ public class Server {
     private Object clear(Request req, Response res) throws DataAccessException {
         // issue resolved, I was clearing auth and users, not the game storage. caused leaks. dg/2.17
         clearDatabase();
+        // fix this in the future. not sure if this is necessary.
         sessions.clear();
         res.status(200);
         return "{}";
