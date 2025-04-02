@@ -2,6 +2,7 @@ package server;
 
 import dataaccess.*;
 import server.WSHandlerFunctions.HandleConnect;
+import server.WSHandlerFunctions.HelperFunctions;
 import service.GameService;
 import spark.*;
 import service.UserService;
@@ -23,6 +24,7 @@ public class Server {
     AuthDAO authDAO;
     GameDAO gameDAO;
     ConnectionManager connectionManager;
+    HelperFunctions helperFunctions;
 
     // WS Handlers
     HandleConnect handleConnect;
@@ -46,7 +48,8 @@ public class Server {
         this.authDAO = new SqlAuthDAO();
         this.gameDAO = new SqlGameDAO();
         this.connectionManager = new ConnectionManager();
-        // do I ned a this.handleConnect stuff?
+        this.helperFunctions = new HelperFunctions(this.connectionManager);
+
 
         userService = new UserService(userDAO, authDAO);
         gameService = new GameService(gameDAO, authDAO);
@@ -55,7 +58,7 @@ public class Server {
         this.userServer = new UserHandler(userService);
         this.gameServer = new GameHandler(gameService);
 
-        this.handleConnect = new HandleConnect(gameService, authDAO, gameDAO, connectionManager);
+        this.handleConnect = new HandleConnect(gameService, authDAO, gameDAO, connectionManager, helperFunctions);
     }
 
     public int run(int desiredPort) {
