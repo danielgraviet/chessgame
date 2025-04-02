@@ -83,16 +83,10 @@ public class PreLoginREPL {
     }
 
     public static void main(String[] args) {
-        String serverName = args.length > 0 ? args[0] : "localhost:8080";
+        String serverName = args.length > 0 ? args[0] : "localhost:8081";
         ServerFacade facade = new ServerFacade(serverName);
         PreLoginREPL loginREPL = new PreLoginREPL(facade);
         loginREPL.run();
     }
 }
 
-// TO DO:
-// add prompts if the user input is garbage
-// add help to post login menu
-// white perspective bottom right should be h1, top left should be a8
-// black perspective bottom right should be A8, top left should be h1
-// catch error, join game a WHITE, fails. catch the invalid ID stuff. catch special characters

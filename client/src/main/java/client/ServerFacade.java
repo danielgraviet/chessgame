@@ -1,5 +1,6 @@
 package client;
 
+import com.sun.tools.jconsole.JConsoleContext;
 import model.game.GameData;
 
 import java.util.Collection;
@@ -17,6 +18,7 @@ public class ServerFacade {
     }
 
     public boolean register(String username, String password, String email){
+        System.out.println("serverName: " + serverName);
         return serverCommunicator.register(username, password, email);
     }
 

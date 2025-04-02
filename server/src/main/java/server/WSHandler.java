@@ -61,9 +61,7 @@ public class WSHandler {
         WSHandler.handleResign = handleResign;
     }
 
-    public static void setHelperFunctions(HelperFunctions helperFunctions) {
-        WSHandler.helperFunctions = helperFunctions;
-    }
+    public static void setHelperFunctions(HelperFunctions helperFunctions) { WSHandler.helperFunctions = helperFunctions; }
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
