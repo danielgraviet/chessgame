@@ -12,6 +12,7 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import server.WSHandlerFunctions.HandleConnect;
 import service.GameService;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
@@ -20,6 +21,7 @@ import websocket.messages.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @WebSocket
@@ -29,6 +31,8 @@ public class WSHandler {
     private static GameService gameService;
     private static AuthDAO authDAO = new SqlAuthDAO();
     private static GameDAO gameDAO = new SqlGameDAO();
+    private static ConnectionManager connectionManager;
+    private static HandleConnect handleConnect;
 
     public static void setGameService(GameService service) {
         gameService = service;
@@ -42,18 +46,21 @@ public class WSHandler {
         gameDAO = dao;
     }
 
+    public static void setConnectionManager(ConnectionManager manager) { // Add setter
+        connectionManager = manager;
+    }
+
+    public static void setHandleConnect(HandleConnect handleConnect) {
+        WSHandler.handleConnect = handleConnect;
+    }
+
     @OnWebSocketConnect
     public void onConnect(Session session) {
         if (session == null) {
             System.err.println("onConnect: Session is null");
             return;
         }
-        System.out.println("Client connected: " + session.getRemoteAddress().getAddress());
-        if (Server.sessions == null) {
-            System.err.println("onConnect: Server.sessions is null - reinitializing");
-            Server.sessions = new ConcurrentHashMap<>();
-        }
-        System.out.println("Total sessions: " + Server.sessions.size());
+        System.out.println("INFO [WSHandler - onConnect]: WebSocket connection opened. Session ID: " + session.hashCode() + ", Remote: " + session.getRemoteAddress());
     }
 
     @OnWebSocketMessage
@@ -77,10 +84,9 @@ public class WSHandler {
                 sendMessage(session, "Error: Invalid command format - " + e.getMessage());
                 return;
             }
-
             switch (baseCommand.getCommandType()) {
                 case CONNECT:
-                    handleConnect(session, baseCommand);
+                    handleConnect.handle(session, baseCommand);
                     break;
                 case MAKE_MOVE:
                     try {
@@ -99,8 +105,7 @@ public class WSHandler {
                     }
                     break;
                 case LEAVE:
-                    // handleLeave(session, command); // TODO: Implement later
-                    sendError(session, "Command not yet implemented: LEAVE");
+                    handleLeave(session, baseCommand);
                     break;
                 case RESIGN:
                     handleResign(session, baseCommand);
@@ -144,23 +149,28 @@ public class WSHandler {
                     break;
         }
 
-        if (Server.sessions != null) {
-            Server.sessions.remove(session);
+        if (connectionManager != null) {
+            connectionManager.removeSession(session);
+        } else {
+            System.err.println("ERROR [WSHandler - onClose]: ConnectionManager is null. Cannot remove session " + session.hashCode());
         }
-        System.out.println("Total sessions: " + (Server.sessions != null ? Server.sessions.size() : 0));
     }
 
     @OnWebSocketError
     public void onError(Session session, Throwable error) {
         String errorMessage = (error != null && error.getMessage() != null) ? error.getMessage() : "Unknown error";
-        System.err.println("WebSocket Error: " + errorMessage);
+        String sessionId = (session != null) ? String.valueOf(session.hashCode()) : "[Unknown Session]";
+        System.err.println("ERROR [WSHandler - onError]: WebSocket error for session " + sessionId + ": " + errorMessage);
 
         if (error != null) {
-            error.printStackTrace();
+            error.printStackTrace(System.err); // Print stack trace to standard error
         }
 
-        if (session != null && Server.sessions != null) {
-            Server.sessions.remove(session);
+        if (session != null && connectionManager != null) {
+            System.out.println("INFO [WSHandler - onError]: Removing session " + sessionId + " from ConnectionManager due to error.");
+            connectionManager.removeSession(session);
+        } else if(connectionManager == null){
+            System.err.println("ERROR [WSHandler - onError]: ConnectionManager is null. Cannot remove session " + sessionId);
         }
     }
 
@@ -177,38 +187,65 @@ public class WSHandler {
         System.out.println("Sent error to client: " + jsonResponse);
     }
 
-    private void broadcastMessage(String message, int gameID, Session excludedSession) {
-        if (Server.sessions == null) {
-            System.err.println("broadcastMessage: Server.sessions is null!");
+    private void broadcastMessage(String message, int gameID, String excludedAuthToken) {
+        if (connectionManager == null) {
+            System.err.println("broadcastMessage: connectionManager is null!");
             return;
         }
 
-        List<Session> gameSessions = Server.sessions.get(gameID);
-        if (gameSessions != null) {
-            // create a copy for protect from unwanted changes to original
-            List<Session> sessionsToSendTo;
-            synchronized (gameSessions) {
-                sessionsToSendTo = new ArrayList<>(gameSessions);
+        ConcurrentHashMap<String, Session> gameConnections = connectionManager.getConnectionsForGame(gameID);
+
+        // Check if there are any connections for this game
+        if (gameConnections == null || gameConnections.isEmpty()) {
+            System.out.println("INFO [WSHandler - broadcastMessage]: No active connections found for game " + gameID + ". Nothing broadcasted.");
+            return;
+        }
+
+        String excludedTokenShort = (excludedAuthToken != null && excludedAuthToken.length() > 8) ? excludedAuthToken.substring(0, 8) + "..." : excludedAuthToken;
+        System.out.println("DEBUG [WSHandler - broadcastMessage]: Broadcasting to game " + gameID + " (Excluding token: " + excludedTokenShort + "). Message glimpse: " + message.substring(0, Math.min(100, message.length())) + (message.length() > 100 ? "..." : ""));
+
+        var exceptions = new ArrayList<IOException>();
+
+        for (Map.Entry<String, Session> entry : gameConnections.entrySet()) {
+            String currentAuthToken = entry.getKey();
+            Session currentSession = entry.getValue();
+
+            // Check if this client should be excluded based on authToken
+            if (excludedAuthToken != null && excludedAuthToken.equals(currentAuthToken)) {
+                // System.out.println("DEBUG [WSHandler - broadcastMessage]: Skipping excluded user token " + excludedTokenShort); // Can be noisy
+                continue; // Skip this session
             }
 
-            System.out.println("Broadcasting to " + (sessionsToSendTo.size() -1) + " clients in game " + gameID + " (excluding sender)");
-
-            for (Session currentSession : sessionsToSendTo) {
-                // prevent duplicate messages being sent.
-                if (!currentSession.equals(excludedSession)) {
-                    try {
-                        sendMessage(currentSession, message);
-                        System.out.println("Broadcast sent to " + currentSession.getRemoteAddress());
-                    } catch (IOException e) {
-                        System.err.println("IOException broadcasting to session " + currentSession.getRemoteAddress() + ": " + e.getMessage());
-                    } catch (Exception e) {
-                        System.err.println("Unexpected error broadcasting to session " + currentSession.getRemoteAddress() + ": " + e.getMessage());
-                        e.printStackTrace();
-                    }
+            // Send the message if the session is open
+            if (currentSession != null && currentSession.isOpen()) {
+                try {
+                    // System.out.println("DEBUG [WSHandler - broadcastMessage]: Sending message to session " + currentSession.hashCode() + " (Token: " + currentAuthToken.substring(0, Math.min(8, currentAuthToken.length())) + "...)"); // Can be noisy
+                    currentSession.getRemote().sendString(message);
+                } catch (IOException e) {
+                    exceptions.add(e);
+                    System.err.println("ERROR [WSHandler - broadcastMessage]: IOException sending to session " + currentSession.hashCode() + " (Token: " + currentAuthToken.substring(0, Math.min(8, currentAuthToken.length())) + "...): " + e.getMessage());
+                    // Consider removing this specific broken connection?
+                    // connectionManager.removeConnection(gameID, currentAuthToken); // Be careful with concurrent modification if not using iterator properly
+                } catch (Exception e) {
+                    // Catch unexpected errors during send
+                    System.err.println("ERROR [WSHandler - broadcastMessage]: Unexpected error sending to session " + currentSession.hashCode() + " (Token: " + currentAuthToken.substring(0, Math.min(8, currentAuthToken.length())) + "...): " + e.getMessage());
+                    e.printStackTrace(System.err);
+                    exceptions.add(new IOException("Unexpected send error: " + e.getMessage(), e)); // Treat as IOException for reporting
                 }
+            } else {
+                System.out.println("WARN [WSHandler - broadcastMessage]: Skipping closed or null session found in game " + gameID + " for token " + currentAuthToken.substring(0, Math.min(8, currentAuthToken.length())) + "...");
+                // Optional: Clean up stale entries if session is closed but still in map
+                // connectionManager.removeConnection(gameID, currentAuthToken);
             }
+        }
+
+        // Log if any errors occurred during the broadcast loop
+        if (!exceptions.isEmpty()) {
+            System.err.println("ERROR [WSHandler - broadcastMessage]: Encountered " + exceptions.size() + " IOExceptions during broadcast to game " + gameID);
+            // You might choose to throw the first exception, or just log
+            // throw exceptions.get(0); // Uncomment if you want the calling method to know about the failure
         } else {
-            System.out.println("No sessions found for game " + gameID + " to broadcast to.");
+            System.out.println("DEBUG [WSHandler - broadcastMessage]: Broadcast completed for game " + gameID);
         }
     }
 
@@ -220,13 +257,13 @@ public class WSHandler {
             return;
         }
 
-        List<Session> gameSessions = Server.sessions.computeIfAbsent(gameID, k -> new ArrayList<>());
+        connectionManager.addConnection(gameID, authToken, session);
 
         ChessGame game = null;
         GameData gameData = null;
         AuthData authData = null;
         String username = "UnknownUser";
-        String playerRole = "Observer";
+        boolean connectionAdded = false;
 
         try {
 
@@ -253,16 +290,11 @@ public class WSHandler {
                 return;
             }
 
-            synchronized (gameSessions) {
-                if (!gameSessions.contains(session)) {
-                    gameSessions.add(session);
-                    System.out.println("Session for user '" + username + "' added successfully to game " + gameID);
-                } else {
-                    System.out.println("Session for user '" + username + "' already exists in game " + gameID);
-                }
-            }
+            connectionManager.addConnection(gameID, authToken, session);
+            connectionAdded = true; // Set flag indicating connection was added
+            System.out.println("INFO [WSHandler - handleConnect]: Connection added for user '" + username + "' to game " + gameID);
 
-
+            String playerRole = "Observer";
             if (gameData.whiteUsername() != null && username.equals(gameData.whiteUsername())) {
                 playerRole = "WHITE";
                 // is this just supposed to do on or the other? or both?
@@ -272,7 +304,7 @@ public class WSHandler {
             System.out.println("User '" + username + "' assigned role: " + playerRole + " for game " + gameID);
 
 
-            LoadGameMessage loadGameMessage = new LoadGameMessage(game);
+            LoadGameMessage loadGameMessage = new LoadGameMessage(gameData);
             String loadGameJson = gson.toJson(loadGameMessage);
             sendMessage(session, loadGameJson);
             System.out.println("Sent LOAD_GAME to connecting client: " + username);
@@ -295,41 +327,32 @@ public class WSHandler {
             String notificationText = String.format("'%s' has joined the game as %s.", username, playerRole);
             NotificationMessage notification = new NotificationMessage(notificationText);
             String notificationJson = gson.toJson(notification);
-            broadcastMessage(notificationJson, gameID, session);
+            broadcastMessage(notificationJson, gameID, authToken);
             System.out.println("Broadcast JOIN NOTIFICATION to game " + gameID + ": user=" + username + ", role=" + playerRole);
-
 
         } catch (DataAccessException e) {
             System.err.println("Data access error during connect for game " + gameID + ", user '" + username + "': " + e.getMessage());
             e.printStackTrace();
             sendError(session, "Error connecting to game due to data access issue: " + e.getMessage());
-
-
         } catch (IOException e) {
             System.err.println("IO error during connect/broadcast for game " + gameID + ", user '" + username + "': " + e.getMessage());
-            synchronized(gameSessions) { gameSessions.remove(session); }
-
         } catch (Exception e) {
             System.err.println("Unexpected error during connect for game " + gameID + ", user '" + username + "': " + e.getMessage());
             e.printStackTrace();
             sendError(session, "An unexpected server error occurred while connecting.");
-            synchronized(gameSessions) { gameSessions.remove(session); }
+            if (connectionAdded) {
+                connectionManager.removeConnection(gameID, authToken);
+            }
         }
     }
 
-    // TODO: Implement handleMakeMove, handleLeave, handleResign methods
-    private void handleMakeMove(Session session, MakeMoveCommand command) throws IOException, InvalidMoveException {
+    private void handleMakeMove(Session session, MakeMoveCommand command) throws IOException {
         Integer gameID = command.getGameID();
         String authToken = command.getAuthToken();
 
         if (invalidTokenAndID(gameID, authToken, session)) {
             return;
         };
-
-        List<Session> gameSessions = Server.sessions.get(gameID);
-        if (gameSessions == null) {
-            sendError(session, "Error: GameID: " + gameID + " has NULL sessions.");
-        }
 
         ChessMove move = command.getMove();
 
@@ -405,7 +428,7 @@ public class WSHandler {
                 return;
             }
 
-            LoadGameMessage loadGameMessage = new LoadGameMessage(updatedGame);
+            LoadGameMessage loadGameMessage = new LoadGameMessage(gameData);
             String loadGameJson = gson.toJson(loadGameMessage);
             broadcastMessage(loadGameJson, gameID, null); // null = no exclusions
             System.out.println("Broadcast LOAD_GAME (after move) to all in game " + gameID);
@@ -420,7 +443,7 @@ public class WSHandler {
 
             NotificationMessage moveNotification = new NotificationMessage(moveDescription); // Use the simple Notification structure
             String moveNotificationJson = gson.toJson(moveNotification);
-            broadcastMessage(moveNotificationJson, gameID, session); // Exclude the player who made the move
+            broadcastMessage(moveNotificationJson, gameID, authToken); // Exclude the player who made the move
             System.out.println("Broadcast MOVE NOTIFICATION to others in game " + gameID);
 
 
@@ -513,6 +536,71 @@ public class WSHandler {
         } catch (Exception e) {
             log.error("Unexpected error during resign for game {}, user '{}': {}", gameID, (username != null ? username : "[Unknown]"), e.getMessage(), e);
             sendError(session, "An unexpected server error occurred while processing your resignation.");
+        }
+    }
+
+    private void handleLeave(Session session, UserGameCommand command) throws IOException, InvalidMoveException {
+        // basic validation with invalidTokenAndId function
+        int gameID = command.getGameID();
+        String authToken = command.getAuthToken();
+        String username = null;
+        if (invalidTokenAndID(gameID, authToken, session)) {
+            return;
+        }
+
+        // use a try catch block for potential errors
+        try {
+            // use authToken to get authData. and retrieve the user name.
+            AuthData authData = authDAO.getUser(authToken);
+            if (authData == null) {
+                sendError(session, "Error: invalid or expired auth.");
+                return;
+            }
+
+            // store the username
+            username = authData.username();
+
+            // fetch the game data
+            GameData gameData = gameDAO.getGameByID(gameID);
+            if (gameData == null) {
+                sendError(session, "Error: Game ID " + gameID + "does not exist.");
+            }
+
+            // update the game. crucial part
+            gameService.leaveGame(gameID, username);
+            System.out.println("INFO [WSHandler - handleLeave]: GameService successfully processed leave for user '" + username + "', gameID: " + gameID);
+
+            connectionManager.removeConnection(gameID, authToken);
+
+            // notify if successful
+            String notificationText = String.format("'%s' has left the game.", username);
+            NotificationMessage notification = new NotificationMessage(notificationText);
+            String notificationJson = gson.toJson(notification);
+
+            // Use the updated broadcastMessage, excluding the leaver by authToken
+            broadcastMessage(notificationJson, gameID, authToken);
+            System.out.println("INFO [WSHandler - handleLeave]: Broadcasted leave notification to others in game " + gameID);
+
+            System.out.println("SUCCESS [WSHandler - handleLeave]: User '" + username + "' successfully left game " + gameID + ".");
+
+        } catch (InvalidMoveException e) { // Or IllegalStateException depending on your service
+            System.err.println("WARN [WSHandler - handleLeave]: Invalid leave attempt by user '" + username + "' for game " + gameID + ": " + e.getMessage());
+            sendError(session, "Error: Cannot leave game - " + e.getMessage());
+        } catch (DataAccessException e) {
+            System.err.println("ERROR [WSHandler - handleLeave]: Data access error processing leave for game " + gameID + ", user '" + username + "': " + e.getMessage());
+            e.printStackTrace(System.err);
+            sendError(session, "Error leaving game: Database error. " + e.getMessage());
+        } catch (IOException e) {
+            // Errors during WebSocket send/broadcast
+            System.err.println("ERROR [WSHandler - handleLeave]: IOException during broadcast/send for user '" + username + "', game " + gameID + ": " + e.getMessage());
+            // Don't try to sendError back if the connection is likely broken
+        } catch (Exception e) { // Catch-all for unexpected issues
+            System.err.println("ERROR [WSHandler - handleLeave]: Unexpected error processing leave for game " + gameID + ", user '" + username + "': " + e.getMessage());
+            e.printStackTrace(System.err);
+            try {
+                // Try to inform the user if the session is still open
+                sendError(session, "An unexpected server error occurred while processing your leave request.");
+            } catch (IOException ioex) { /* If sending error fails, nothing more to do */ }
         }
     }
 

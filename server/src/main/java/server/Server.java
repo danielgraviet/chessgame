@@ -1,6 +1,7 @@
 package server;
 
 import dataaccess.*;
+import server.WSHandlerFunctions.HandleConnect;
 import service.GameService;
 import spark.*;
 import service.UserService;
@@ -21,6 +22,10 @@ public class Server {
     UserDAO userDAO;
     AuthDAO authDAO;
     GameDAO gameDAO;
+    ConnectionManager connectionManager;
+
+    // WS Handlers
+    HandleConnect handleConnect;
 
     static ConcurrentHashMap<Integer, List<Session>> sessions = new ConcurrentHashMap<>();
 
@@ -40,6 +45,8 @@ public class Server {
         this.userDAO = new SqlUserDAO();
         this.authDAO = new SqlAuthDAO();
         this.gameDAO = new SqlGameDAO();
+        this.connectionManager = new ConnectionManager();
+        // do I ned a this.handleConnect stuff?
 
         userService = new UserService(userDAO, authDAO);
         gameService = new GameService(gameDAO, authDAO);
@@ -47,6 +54,8 @@ public class Server {
 
         this.userServer = new UserHandler(userService);
         this.gameServer = new GameHandler(gameService);
+
+        this.handleConnect = new HandleConnect(gameService, authDAO, gameDAO, connectionManager);
     }
 
     public int run(int desiredPort) {
@@ -57,6 +66,8 @@ public class Server {
         WSHandler.setAuthDAO(this.authDAO);
         WSHandler.setGameDAO(this.gameDAO);
         WSHandler.setGameService(gameService);
+        WSHandler.setConnectionManager(this.connectionManager);
+        WSHandler.setHandleConnect(this.handleConnect);
 
         // Websocket
         Spark.webSocket("/ws", WSHandler.class);

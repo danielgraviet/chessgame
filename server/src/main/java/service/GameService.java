@@ -198,6 +198,83 @@ public class GameService {
         }
     }
 
+    public void leaveGame(int gameID, String username) throws DataAccessException, InvalidMoveException {
+        GameData currentGameData;
+        try {
+            currentGameData = gameDAO.getGameByID(gameID);
+        } catch (DataAccessException e) {
+            // Adding detail about the specific operation failing
+            System.err.println("ERROR [GameService - leaveGame]: Failed to retrieve game data for gameID " + gameID + ". Details: " + e.getMessage());
+            throw e; // Re-throw original exception
+        }
+
+        if (currentGameData == null) {
+            // This specific condition is already covered by DataAccessException usually, but keep for clarity if getGameByID can return null without exception
+            System.err.println("ERROR [GameService - leaveGame]: Attempted to leave non-existent game. GameID: " + gameID + ", User: " + username);
+            throw new DataAccessException("Game with ID " + gameID + " not found");
+        }
+
+        ChessGame game = currentGameData.game();
+        // Check if game is over AFTER confirming game exists
+        if (game != null && game.isGameOver()) {
+            System.err.println("ERROR [GameService - leaveGame]: User '" + username + "' attempted to leave game " + gameID + ", but the game is already over.");
+            throw new InvalidMoveException("Cannot leave game; the game is already over.");
+            // Consider if InvalidMoveException is the right type here, maybe IllegalStateException? But sticking to your current signature.
+        }
+
+        String whitePlayerName = currentGameData.whiteUsername();
+        String blackPlayerName = currentGameData.blackUsername();
+        GameData updatedGameData = null; // To store the potentially modified game data
+
+        System.out.println("INFO [GameService - leaveGame]: Processing leave request for user '" + username + "' in game " + gameID + ".");
+        System.out.println("INFO [GameService - leaveGame]: Current players - White: " + (whitePlayerName != null ? whitePlayerName : "[Empty]") + ", Black: " + (blackPlayerName != null ? blackPlayerName : "[Empty]"));
+
+
+        if (username.equals(whitePlayerName)) {
+            // White player is leaving
+            System.out.println("INFO [GameService - leaveGame]: User '" + username + "' is the WHITE player. Preparing to clear their slot in game " + gameID + ".");
+            updatedGameData = new GameData(
+                    currentGameData.gameID(),
+                    null, // Clear white username
+                    blackPlayerName,
+                    currentGameData.gameName(),
+                    currentGameData.game() // Keep the existing game state object
+            );
+        } else if (username.equals(blackPlayerName)) {
+            // Black player is leaving
+            System.out.println("INFO [GameService - leaveGame]: User '" + username + "' is the BLACK player. Preparing to clear their slot in game " + gameID + ".");
+            updatedGameData = new GameData(
+                    currentGameData.gameID(),
+                    whitePlayerName,
+                    null, // Clear black username
+                    currentGameData.gameName(),
+                    currentGameData.game() // Keep the existing game state object
+            );
+        } else {
+            // User is not a player (observer or other)
+            System.out.println("INFO [GameService - leaveGame]: User '" + username + "' is not an assigned player (Observer or other) in game " + gameID + ". No persistent game data change needed.");
+            // No update needed, so we exit the method successfully.
+            return;
+        }
+
+        // Only proceed to update if updatedGameData was actually created (meaning a player left)
+        if (updatedGameData != null) {
+            try {
+                System.out.println("INFO [GameService - leaveGame]: Attempting to update database for game " + gameID + " after player '" + username + "' left.");
+                gameDAO.updateGame(updatedGameData);
+                System.out.println("SUCCESS [GameService - leaveGame]: Game " + gameID + " data successfully updated in database after player '" + username + "' left.");
+            } catch (DataAccessException e) {
+                // Provide context for the update failure
+                System.err.println("ERROR [GameService - leaveGame]: Failed to update game data in database for gameID " + gameID + " after user '" + username + "' left. Details: " + e.getMessage());
+                // Print stack trace to standard error for more debugging info
+                e.printStackTrace(System.err);
+                // Re-throw the original exception type as expected by the method signature
+                throw new DataAccessException("Failed to update game state after player left: " + e.getMessage());
+                // Avoid wrapping in RuntimeException unless that's the desired contract
+            }
+        }
+    }
+
     public void clear() throws DataAccessException {
         gameDAO.clear();
     }
