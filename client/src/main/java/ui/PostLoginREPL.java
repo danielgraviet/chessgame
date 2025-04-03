@@ -4,12 +4,10 @@ import chess.ChessGame;
 import client.ServerFacade;
 import model.game.GameData;
 
-import java.sql.ClientInfoStatus;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Scanner;
 
-import static java.lang.System.getenv;
 import static ui.EscapeSequences.*;
 
 import static java.lang.System.out;
@@ -107,7 +105,7 @@ public class PostLoginREPL {
                 return;
             }
 
-            String authToken = facade.getAuthToken(); // Assuming facade has a getter
+            String authToken = facade.getAuthToken();
             if (authToken == null) {
                 out.println(SET_TEXT_COLOR_RED + "Error: Not properly logged in (no auth token)." + RESET_TEXT_COLOR);
                 return;
@@ -130,15 +128,6 @@ public class PostLoginREPL {
         } catch (Exception e) {
             out.println(SET_TEXT_COLOR_RED + "Error entering observer mode: " + e.getMessage() + RESET_TEXT_COLOR);
             e.printStackTrace();
-        }
-    }
-
-
-    private void observeGame(GameData game) {
-        RenderBoard.printBoard(game.game(), true);
-        out.println("Observing " + game.gameName() + ". Type 'exit' to quit.");
-        while (!scanner.nextLine().trim().equalsIgnoreCase("exit")) {
-            out.println("Type 'exit' to stop observing game.");
         }
     }
 
@@ -199,24 +188,6 @@ public class PostLoginREPL {
         }
     }
 
-    private void observeJoinedGame(String gameIdStr, String color) {
-        try {
-            int gameId = Integer.parseInt(gameIdStr);
-            GameData game = findGameByID(gameId);
-            if (game == null) {
-                out.println("Game with ID " + gameId + " not found.");
-                return;
-            }
-            boolean perspective = Objects.equals(color.toLowerCase(), "white");
-            RenderBoard.printBoard(game.game(), perspective);
-            out.println("Observing " + game.gameName() + ". Type 'exit' to quit.");
-            while (!scanner.nextLine().trim().equalsIgnoreCase("exit")) {
-                out.println("Type 'exit' to stop observing game.");
-            }
-        } catch (NumberFormatException e) {
-            out.println("Invalid game ID: " + gameIdStr);
-        }
-    }
 
     private void handleCreateGame(String gameName) {
         out.println("Creating game...");
@@ -237,14 +208,12 @@ public class PostLoginREPL {
     }
 
     private boolean handleLogout() {
-        // Close any potential lingering WS connection if needed? Unlikely here.
         if (facade.logout()) {
             out.println("You have logged out.");
-            // Don't call loginREPL.run() here. Let the main loop exit.
-            return false; // Signal to stop the loop
+            return false;
         } else {
             out.println(SET_TEXT_COLOR_RED + "Logout failed (check facade logs/output)." + RESET_TEXT_COLOR);
-            return true; // Stay logged in
+            return true;
         }
     }
 

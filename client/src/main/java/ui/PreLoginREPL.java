@@ -28,28 +28,24 @@ public class PreLoginREPL {
             // --- Handle empty input before the switch ---
             if (input == null || input.length == 0 || input[0].isEmpty()) {
                 out.println("Please enter a command.");
-                out.print("[LOGGED OUT] >>> "); // Reprint prompt
-                continue; // Go to the next loop iteration
+                out.print("[LOGGED OUT] >>> ");
+                continue;
             }
 
-            // --- Use lowercase command for case-insensitive matching ---
             String command = input[0].toLowerCase();
 
             switch (command) {
                 case "register":
                     if (input.length != 4){
                         out.println("Usage: register <USERNAME> <PASSWORD> <EMAIL>");
-                        break; // Break after usage message
+                        break;
                     }
-                    // Attempt registration
                     if (facade.register(input[1], input[2], input[3])) {
                         out.println("User successfully registered and logged in.");
                         loggedIn = true; // Assume auto-login on successful registration
                     } else {
-                        // Facade should print specific errors (like username taken)
                         out.println("Registration failed.");
                     }
-                    // --- *** IMPORTANT: Added break to prevent fall-through *** ---
                     break;
 
                 case "login":
@@ -64,11 +60,7 @@ public class PreLoginREPL {
                     } else {
                         // Facade should print specific errors (like wrong password)
                         out.println("Login failed.");
-                        // NOTE: Original had 'continue' here. 'break' is usually preferred
-                        // unless you specifically want to skip the prompt reprint below.
-                        // Let's use break for consistency.
                     }
-                    // --- *** IMPORTANT: Ensure break executes for both success/fail *** ---
                     break;
 
                 case "quit":
@@ -83,7 +75,6 @@ public class PreLoginREPL {
                 default:
                     out.println("Invalid command.");
                     out.println("Type 'help' for a list of valid commands.");
-                    // Break is good practice even for default, though not strictly needed if last
                     break;
             } // End of switch
 

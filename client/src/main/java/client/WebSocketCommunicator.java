@@ -7,11 +7,9 @@ import javax.websocket.Session;
 import chess.ChessGame;
 import chess.ChessPosition;
 import chess.ChessPiece;
-import chess.ChessGame;
 import com.google.gson.Gson;
 import model.game.GameData;
 
-import ui.PostLoginREPL;
 import websocket.messages.*;
 
 import javax.websocket.*;
@@ -77,39 +75,38 @@ public class WebSocketCommunicator extends Endpoint {
                     break;
                 case ERROR:
                     ErrorMessage error = gson.fromJson(message, ErrorMessage.class);
-                    // Use getErrorMessage() as defined in ErrorMessage class
                     uiHandler.displayError("Server Error: " + error.getErrorMessage());
                     break;
                 case LOAD_GAME:
                     LoadGameMessage loadGame = gson.fromJson(message, LoadGameMessage.class);
-                    GameData gameData = loadGame.getGame(); // Get GameData object
+                    GameData gameData = loadGame.getGame();
 
-                    // --- Extract ChessGame from GameData ---
+                    // check game data
                     if (gameData != null && gameData.game() != null) {
                         ChessGame chessGame = gameData.game();
 
-                        ChessPosition checkPos = new ChessPosition(3, 5); // Row 3, Col 5 is 'e3'
+                        ChessPosition checkPos = new ChessPosition(3, 5); // test
                         ChessPiece pieceAtCheckPos = chessGame.getBoard().getPiece(checkPos);
                         String pieceStr = (pieceAtCheckPos != null) ? pieceAtCheckPos.toString() : "null";
                         System.out.println("DEBUG WS [RECV] << Parsed LOAD_GAME. Piece at " + checkPos + ": " + pieceStr);
 
                         uiHandler.updateBoard(chessGame);
                     } else {
-                        // Handle cases where game data or the inner game is null
+                        // handlel cases where game data or the inner game is null
                         uiHandler.displayError("Error: Received incomplete game data from server.");
                     }
                     break;
                 default:
-                    // Should not happen if server message types are handled correctly
+                    // should not happen if server message types are handled
                     uiHandler.displayError("Error: Received unknown message type from server: " + baseMessage.getServerMessageType());
                     break;
             }
         } catch (Exception e) {
-            // Catch potential Gson parsing errors or other issues
+            //  potential Gson parsing errors or other issues
             uiHandler.displayError("Error processing server message: " + e.getMessage());
-            // e.printStackTrace(); // Log for debugging
+            // e.printStackTrace();
         } finally {
-            // Always redraw the prompt after handling a message
+            // redraw the prompt after handling a message
             uiHandler.redrawPrompt();
         }
     }
@@ -117,14 +114,11 @@ public class WebSocketCommunicator extends Endpoint {
     public void sendMessage(String jsonMessage) throws IOException {
         if (this.session != null && this.session.isOpen()) {
             try {
-                // Using basic remote: synchronous, throws IOException on failure
                 this.session.getBasicRemote().sendText(jsonMessage);
             } catch (IOException e) {
-                // Log or handle the send failure
                 throw new IOException("Failed to send message via WebSocket: " + e.getMessage(), e);
             }
         } else {
-            // Handle cases where the session is closed or not initialized
             throw new IOException("Cannot send message: WebSocket session is not open.");
         }
     }
@@ -132,13 +126,12 @@ public class WebSocketCommunicator extends Endpoint {
     public void close() {
         if (this.session != null && this.session.isOpen()) {
             try {
-                // Close the session with a normal closure reason
-                this.session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Client logging out or closing game"));
+                this.session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE,
+                        "Client logging out or closing game"));
             } catch (IOException e) {
-                // Log or handle error during closure
                 System.err.println("Error closing WebSocket session: " + e.getMessage());
             } finally {
-                this.session = null; // Nullify the session reference
+                this.session = null;
             }
         }
     }

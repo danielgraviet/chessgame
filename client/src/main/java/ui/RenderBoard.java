@@ -4,7 +4,6 @@ import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
 
-import java.util.Objects;
 
 import static ui.EscapeSequences.*;
 
