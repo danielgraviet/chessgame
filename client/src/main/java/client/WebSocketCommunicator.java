@@ -61,6 +61,7 @@ public class WebSocketCommunicator extends Endpoint {
     }
 
     private void handleMessage(String message) {
+        System.out.println("DEBUG WS [RECV] << Raw: " + message);
         try {
             ServerMessage baseMessage = new Gson().fromJson(message, ServerMessage.class);
 

@@ -58,12 +58,12 @@ public class GameplayREPL implements GameHandlerUI{
             System.out.println("DEBUG: Sent CONNECT command."); // Debug print
 
             // --- Initial Board Draw (if game state exists) ---
-            if (currentGame != null) {
-                updateBoard(currentGame); // Show initial state
-                redrawPrompt();
-            } else {
-                System.out.println("Waiting for initial game state from server...");
-            }
+//            if (currentGame != null) {
+//                updateBoard(currentGame); // Show initial state
+//                redrawPrompt();
+//            } else {
+//                System.out.println("Waiting for initial game state from server...");
+//            }
 
 
             // --- Gameplay Loop ---
