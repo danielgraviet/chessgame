@@ -26,9 +26,15 @@ public class HttpCommunicator implements ServerCommunicator {
         }
 
         // 2. Use a temporary variable to hold the potentially modified URL
-        String processedUrl = serverName;
+        String processedUrl = serverName.trim();
 
         // 3. Modify the temporary variable if needed
+        String lowerCaseUrl = processedUrl.toLowerCase();
+        if (!lowerCaseUrl.startsWith("http://") && !lowerCaseUrl.startsWith("https://")) {
+            processedUrl = "http://" + processedUrl;
+            System.out.println("DEBUG COMM [INIT] Added 'http://' prefix to server URL: " + processedUrl);
+        }
+
         if (processedUrl.endsWith("/")) {
             processedUrl = processedUrl.substring(0, processedUrl.length() - 1);
         }
@@ -245,7 +251,7 @@ public class HttpCommunicator implements ServerCommunicator {
     }
 
     private HttpURLConnection setupConnection(String method, String endpoint, Map<String, ?> body) throws IOException {
-        URI uri = URI.create(baseUrl + endpoint);
+        URI uri = URI.create(this.baseUrl + endpoint);
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
         conn.setRequestMethod(method);
 
