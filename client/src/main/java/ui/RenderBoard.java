@@ -10,101 +10,89 @@ import static ui.EscapeSequences.*;
 
 public class RenderBoard {
     public static void printBoard(ChessGame game, boolean whitePerspective) {
+        // error checking
+        if (game == null || game.getBoard() == null) {
+            System.out.println(SET_TEXT_COLOR_RED + "Error: Cannot print null game or board." + RESET_TEXT_COLOR);
+            return;
+        }
+
         ChessBoard board = game.getBoard();
         StringBuilder builder = new StringBuilder();
-        builder.append(ERASE_SCREEN);
 
         // top and bottom column headings
         String columnsWhite = "   a  b  c  d  e  f  g  h   \n";
         String columnsBlack = "   h  g  f  e  d  b  c  a   \n";
         String columns = whitePerspective ? columnsWhite : columnsBlack;
 
+        // top columns
+        builder.append(SET_TEXT_COLOR_YELLOW).append(columns).append(RESET_TEXT_COLOR);
 
         // variables for different perspectives
-        int startRow = whitePerspective ? 1 : 8;
-        int endRow = whitePerspective ? 9 : 0;
-        int increment = whitePerspective ? 1 : -1;
+        int rowStart = whitePerspective ? 8 : 1;
+        int rowEnd = whitePerspective ? 0 : 9;
+        int rowIncrement = whitePerspective ? -1 : 1;
 
-        // append top row that display's columns. think of stacking a sandwich
-        builder.append(SET_TEXT_COLOR_YELLOW)
-                .append(columns)
-                .append(RESET_TEXT_COLOR);
+        for (int visualRow = rowStart; visualRow != rowEnd; visualRow += rowIncrement) {
+            int internalRow = visualRow;
 
-        for (int row = startRow; row != endRow; row += increment) {
-            int displayRow = 9 - row;
+            // Print the row label
+            builder.append(SET_TEXT_COLOR_YELLOW).append(" ").append(visualRow).append(" ").append(RESET_TEXT_COLOR);
 
-            // add row numbers
-            builder.append(SET_TEXT_COLOR_YELLOW)
-                    .append(displayRow)
-                    .append(" ")
-                    .append(RESET_TEXT_COLOR);
-
-            int startCol = whitePerspective ? 1 : 8;
-            int endCol = whitePerspective ? 9 : 0;
+            int colStart = whitePerspective ? 1 : 8;
+            int colEnd = whitePerspective ? 9 : 0;
             int colIncrement = whitePerspective ? 1 : -1;
 
-            for (int col = startCol; col != endCol; col += colIncrement) {
+            for (int visualCol = colStart; visualCol != colEnd; visualCol += colIncrement) {
+                int internalCol = visualCol;
                 // way to alternate light squares and dark squares w modulo.
-                boolean isLightSquare = (row + col) % 2 == 0;
-                builder.append(isLightSquare ? SET_BG_COLOR_WHITE : SET_BG_COLOR_BLACK);
+                boolean isLightSquare = (internalRow + internalCol) % 2 != 0;
+                builder.append(isLightSquare ? SET_BG_COLOR_LIGHT_GREY : SET_BG_COLOR_DARK_GREY);
 
                 // extract the piece at that position
-                ChessPosition position = new ChessPosition(row, col);
+                ChessPosition position = new ChessPosition(internalRow, internalCol);
                 ChessPiece piece = board.getPiece(position);
 
-                if (piece == null) {
-                    builder.append(EMPTY);
-                } else {
-                    builder.append(convertPieceToSymbol(piece));
-                }
+                builder.append(getColoredPieceSymbol(piece));
             }
             builder.append(RESET_BG_COLOR)
-                    .append(SET_TEXT_COLOR_YELLOW)
-                    .append(" ")
-                    .append(displayRow)
-                    .append(RESET_TEXT_COLOR)
+                    .append(SET_TEXT_COLOR_YELLOW).append(" ").append(visualRow).append(" ").append(RESET_TEXT_COLOR)
                     .append("\n");
         }
-
-        // append the bottom row
-        builder.append(SET_TEXT_COLOR_YELLOW)
-                .append(columns)
-                .append(RESET_TEXT_COLOR);
+        builder.append(SET_TEXT_COLOR_YELLOW).append(columns).append(RESET_TEXT_COLOR);
 
         System.out.println(builder);
     }
 
-    public static String convertPieceToSymbol(ChessPiece piece) {
+    private static String getColoredPieceSymbol(ChessPiece piece) {
         if (piece == null) {
             return EMPTY;
-        } else if (Objects.equals(piece.toString(), "WHITE PAWN")) {
-            return WHITE_PAWN;
-        } else if (Objects.equals(piece.toString(), "WHITE KING")) {
-            return WHITE_KING;
-        } else if (Objects.equals(piece.toString(), "WHITE QUEEN")) {
-            return WHITE_QUEEN;
-        } else if (Objects.equals(piece.toString(), "WHITE KNIGHT")) {
-            return WHITE_KNIGHT;
-        } else if (Objects.equals(piece.toString(), "WHITE BISHOP")) {
-            return WHITE_BISHOP;
-        } else if (Objects.equals(piece.toString(), "WHITE ROOK")) {
-            return WHITE_ROOK;
-
-
-        } else if (Objects.equals(piece.toString(), "BLACK PAWN")) {
-            return BLACK_PAWN;
-        } else if (Objects.equals(piece.toString(), "BLACK KING")) {
-            return BLACK_KING;
-        } else if (Objects.equals(piece.toString(), "BLACK QUEEN")) {
-            return BLACK_QUEEN;
-        } else if (Objects.equals(piece.toString(), "BLACK KNIGHT")) {
-            return BLACK_KNIGHT;
-        } else if (Objects.equals(piece.toString(), "BLACK BISHOP")) {
-            return BLACK_BISHOP;
-        } else if (Objects.equals(piece.toString(), "BLACK ROOK")) {
-            return BLACK_ROOK;
-        } else {
-            return "INVALID PIECE";
         }
+
+        String pieceSymbol;
+        String textColor;
+
+        switch (piece.getPieceType()) {
+            case PAWN:   pieceSymbol = WHITE_PAWN;   break;
+            case ROOK:   pieceSymbol = WHITE_ROOK;   break;
+            case KNIGHT: pieceSymbol = WHITE_KNIGHT; break;
+            case BISHOP: pieceSymbol = WHITE_BISHOP; break;
+            case QUEEN:  pieceSymbol = WHITE_QUEEN;  break;
+            case KING:   pieceSymbol = WHITE_KING;   break;
+            default:     pieceSymbol = "?";          break;
+        }
+        if (piece.getTeamColor() == ChessGame.TeamColor.BLACK) {
+            switch (piece.getPieceType()) {
+                case PAWN:   pieceSymbol = BLACK_PAWN;   break;
+                case ROOK:   pieceSymbol = BLACK_ROOK;   break;
+                case KNIGHT: pieceSymbol = BLACK_KNIGHT; break;
+                case BISHOP: pieceSymbol = BLACK_BISHOP; break;
+                case QUEEN:  pieceSymbol = BLACK_QUEEN;  break;
+                case KING:   pieceSymbol = BLACK_KING;   break;
+            }
+        }
+
+        textColor = (piece.getTeamColor() == ChessGame.TeamColor.WHITE) ? SET_TEXT_COLOR_WHITE : SET_TEXT_COLOR_BLACK;
+
+        return textColor + pieceSymbol + RESET_TEXT_COLOR;
     }
 }
