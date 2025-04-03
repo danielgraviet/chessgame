@@ -107,23 +107,25 @@ public class HandleMakeMove {
 
             // assume it has been successful, so now we broadcast the updates.
 
-            // get the updated game.
-            ChessGame updatedGame = gameService.getGame(gameID);
-            if (updatedGame == null) {
-                System.err.println("CRITICAL: Game state is null after successful move and save for game " + gameID);
-                this.helperFunctions.sendError(session, "Internal server error after making move.");
+            GameData updatedGameData = gameDAO.getGameByID(gameID);
+            if (updatedGameData == null || updatedGameData.game() == null) {
+                System.err.println("CRITICAL: Failed to retrieve updated GameData or game state after move for game " + gameID);
+                this.helperFunctions.sendError(session, "Internal server error after making move (failed to load update).");
+                // Maybe try broadcasting the OLD state? Or just stop. For now, stop.
                 return;
             }
 
-            LoadGameMessage loadGameMessage = new LoadGameMessage(gameData);
+            LoadGameMessage loadGameMessage = new LoadGameMessage(updatedGameData);
             String loadGameJson = gson.toJson(loadGameMessage);
             this.helperFunctions.broadcastMessage(loadGameJson, gameID, null);
             System.out.println("Broadcast LOAD_GAME (after move) to all in game " + gameID);
 
+            ChessGame updatedGameLogic = updatedGameData.game();
+
             String moveDescription = String.format("'%s' (%s) moved %s from %s to %s%s.",
                     username,
                     playerColor,
-                    updatedGame.getBoard().getPiece(move.getEndPosition()).getPieceType(),
+                    updatedGameLogic.getBoard().getPiece(move.getEndPosition()).getPieceType(),
                     move.getStartPosition().toString(),
                     move.getEndPosition().toString(),
                     move.getPromotionPiece() != null ? " promoting to " + move.getPromotionPiece() : "");
@@ -139,11 +141,11 @@ public class HandleMakeMove {
             opponentUsername = (opponentUsername == null) ? "[Opponent]" : "'" + opponentUsername + "'";
 
             String stateNotificationText = null;
-            if (updatedGame.isInCheckmate(opponentColor)) {
+            if (updatedGameLogic.isInCheckmate(opponentColor)) {
                 stateNotificationText = String.format("CHECKMATE! %s (%s) defeated %s (%s).", username, playerColor, opponentUsername, opponentColor);
-            } else if (updatedGame.isInStalemate(opponentColor)) {
+            } else if (updatedGameLogic.isInStalemate(opponentColor)) {
                 stateNotificationText = "STALEMATE! The game is a draw.";
-            } else if (updatedGame.isInCheck(opponentColor)) {
+            } else if (updatedGameLogic.isInCheck(opponentColor)) {
                 stateNotificationText = String.format("CHECK! %s (%s) is in check.", opponentUsername, opponentColor);
             }
 

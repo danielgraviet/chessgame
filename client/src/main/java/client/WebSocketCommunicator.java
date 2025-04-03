@@ -5,6 +5,9 @@ import javax.websocket.Session;
 
 // chess imports
 import chess.ChessGame;
+import chess.ChessPosition;
+import chess.ChessPiece;
+import chess.ChessGame;
 import com.google.gson.Gson;
 import model.game.GameData;
 
@@ -22,6 +25,7 @@ import ui.GameHandlerUI;
 public class WebSocketCommunicator extends Endpoint {
     Session session;
     private final GameHandlerUI uiHandler;
+    private final Gson gson = new Gson();
 
     public WebSocketCommunicator(String serverDomain, GameHandlerUI uiHandler) throws Exception {
         if (uiHandler == null) {
@@ -63,25 +67,32 @@ public class WebSocketCommunicator extends Endpoint {
     private void handleMessage(String message) {
         System.out.println("DEBUG WS [RECV] << Raw: " + message);
         try {
-            ServerMessage baseMessage = new Gson().fromJson(message, ServerMessage.class);
+            ServerMessage baseMessage = gson.fromJson(message, ServerMessage.class);
+            System.out.println("DEBUG WS [RECV] << Type: " + baseMessage.getServerMessageType());
 
             switch (baseMessage.getServerMessageType()) {
                 case NOTIFICATION:
-                    NotificationMessage notif = new Gson().fromJson(message, NotificationMessage.class);
+                    NotificationMessage notif = gson.fromJson(message, NotificationMessage.class);
                     uiHandler.displayNotification(notif.getMessage());
                     break;
                 case ERROR:
-                    ErrorMessage error = new Gson().fromJson(message, ErrorMessage.class);
+                    ErrorMessage error = gson.fromJson(message, ErrorMessage.class);
                     // Use getErrorMessage() as defined in ErrorMessage class
                     uiHandler.displayError("Server Error: " + error.getErrorMessage());
                     break;
                 case LOAD_GAME:
-                    LoadGameMessage loadGame = new Gson().fromJson(message, LoadGameMessage.class);
+                    LoadGameMessage loadGame = gson.fromJson(message, LoadGameMessage.class);
                     GameData gameData = loadGame.getGame(); // Get GameData object
 
                     // --- Extract ChessGame from GameData ---
                     if (gameData != null && gameData.game() != null) {
-                        ChessGame chessGame = gameData.game(); // gameData.game() returns ChessGame
+                        ChessGame chessGame = gameData.game();
+
+                        ChessPosition checkPos = new ChessPosition(3, 5); // Row 3, Col 5 is 'e3'
+                        ChessPiece pieceAtCheckPos = chessGame.getBoard().getPiece(checkPos);
+                        String pieceStr = (pieceAtCheckPos != null) ? pieceAtCheckPos.toString() : "null";
+                        System.out.println("DEBUG WS [RECV] << Parsed LOAD_GAME. Piece at " + checkPos + ": " + pieceStr);
+
                         uiHandler.updateBoard(chessGame);
                     } else {
                         // Handle cases where game data or the inner game is null
