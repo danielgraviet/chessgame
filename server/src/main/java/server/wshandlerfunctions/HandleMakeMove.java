@@ -36,31 +36,21 @@ public class HandleMakeMove {
 
     public void handle(Session session, MakeMoveCommand command) throws IOException {
         Integer gameID = command.getGameID(); String authToken = command.getAuthToken();
-
         if (this.helperFunctions.invalidTokenAndID(gameID, authToken, session)) {
             return;
         };
-
         ChessMove move = command.getMove();
         ChessGame game = null; GameData gameData = null; String username = null; AuthData authData = null;
         if (gameID == null || authToken == null || authToken.isBlank() || move == null) {
             this.helperFunctions.sendError(session, "Error: Missing required fields (gameID, authToken, move) for MAKE_MOVE.");
             return;
         }
-
         try {
-            // authenticate the user
             authData = authDAO.getUser(authToken);
             if (authData == null) {
                 this.helperFunctions.sendError(session, "Error: Invalid or expired authentication token.");
                 return;
             }
-
-            // output the username
-            username = authData.username();
-            System.out.println("User '" + username + "' attempting to make a move in game " + gameID);
-
-            // get the gameData
             gameData = gameDAO.getGameByID(gameID);
             if (gameData == null) {
                 this.helperFunctions.sendError(session, "Error: Game ID " + gameID + " does not exist.");
@@ -72,15 +62,12 @@ public class HandleMakeMove {
                 this.helperFunctions.sendError(session, "Error: Could not load game logic/state for game ID " + gameID + ".");
                 return;
             }
-
-            // authorize the move
             ChessGame.TeamColor playerColor = null;
             if (username.equals(gameData.whiteUsername())) {
                 playerColor = ChessGame.TeamColor.WHITE;
             } else if (username.equals(gameData.blackUsername())) {
                 playerColor = ChessGame.TeamColor.BLACK;
             }
-
             if (playerColor == null) {
                 this.helperFunctions.sendError(session, "Error: Observers cannot make moves.");
                 return;
@@ -93,12 +80,8 @@ public class HandleMakeMove {
                 this.helperFunctions.sendError(session, "Error: The game is already over.");
                 return;
             }
-
-            // where the actual change of the game occurs.
             gameService.makeMove(gameID, move, username, playerColor);
             System.out.println("Move validated and executed successfully for game " + gameID);
-
-            // assume it has been successful, so now we broadcast the updates.
             GameData updatedGameData = gameDAO.getGameByID(gameID);
             if (updatedGameData == null || updatedGameData.game() == null) {
                 System.err.println("CRITICAL: Failed to retrieve updated GameData or game state after move for game " + gameID);
@@ -110,12 +93,9 @@ public class HandleMakeMove {
             this.helperFunctions.broadcastMessage(loadGameJson, gameID, null);
             System.out.println("Broadcast LOAD_GAME (after move) to all in game " + gameID);
             ChessGame updatedGameLogic = updatedGameData.game();
-            String moveDescription = String.format("'%s' (%s) moved %s from %s to %s%s.",
-                    username,
-                    playerColor,
+            String moveDescription = String.format("'%s' (%s) moved %s from %s to %s%s.", username, playerColor,
                     updatedGameLogic.getBoard().getPiece(move.getEndPosition()).getPieceType(),
-                    move.getStartPosition().toString(),
-                    move.getEndPosition().toString(),
+                    move.getStartPosition().toString(), move.getEndPosition().toString(),
                     move.getPromotionPiece() != null ? " promoting to " + move.getPromotionPiece() : "");
             NotificationMessage moveNotification = new NotificationMessage(moveDescription);
             String moveNotificationJson = gson.toJson(moveNotification);
