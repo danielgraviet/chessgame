@@ -17,12 +17,6 @@ import java.util.Set;
 import static ui.EscapeSequences.*;
 
 public class GameplayREPL implements GameHandlerUI{
-    // needs these functions
-    //    void displayNotification(String message);
-    //    void displayError(String message);
-    //    void updateBoard(ChessGame game);
-    //    void redrawPrompt();
-
     private final ServerFacade serverFacade; // To get authToken
     private final String serverDomain;
     private final int gameID;
@@ -36,7 +30,13 @@ public class GameplayREPL implements GameHandlerUI{
     private final Gson gson = new Gson();
     private final boolean perspective;
 
-    public GameplayREPL(ServerFacade facade, String domain, int gameID, ChessGame.TeamColor playerColor, String authToken, PostLoginREPL postLoginREPL, ChessGame initialGame) {
+    public GameplayREPL(ServerFacade facade,
+                        String domain,
+                        int gameID,
+                        ChessGame.TeamColor playerColor,
+                        String authToken,
+                        PostLoginREPL postLoginREPL,
+                        ChessGame initialGame) {
         this.serverFacade = facade;
         this.serverDomain = domain;
         this.gameID = gameID;
@@ -117,7 +117,9 @@ public class GameplayREPL implements GameHandlerUI{
     }
 
     private void sendLeaveCommand() {
-        if (wsCommunicator == null) return;
+        if (wsCommunicator == null) {
+            return;
+        }
         try {
             UserGameCommand leaveCmd = new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID);
             wsCommunicator.sendMessage(gson.toJson(leaveCmd));
@@ -128,7 +130,9 @@ public class GameplayREPL implements GameHandlerUI{
     }
 
     private void sendResignCommand() {
-        if (wsCommunicator == null) return;
+        if (wsCommunicator == null) {
+            return;
+        }
         if (playerColor == null) {
             displayError("Observers cannot resign.");
             redrawPrompt();

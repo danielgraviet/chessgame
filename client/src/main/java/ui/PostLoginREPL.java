@@ -197,7 +197,8 @@ public class PostLoginREPL {
             if (newGameID > 0) {
                 out.println("Successfully created game '" + gameName + "' with ID: " + newGameID);
             } else {
-                out.println(SET_TEXT_COLOR_RED + "Failed to create game '" + gameName + "'. Server did not return a valid game ID." + RESET_TEXT_COLOR);
+                out.println(SET_TEXT_COLOR_RED + "Failed to create game '" +
+                        gameName + "'. Server did not return a valid game ID." + RESET_TEXT_COLOR);
                 out.println(SET_TEXT_COLOR_YELLOW + "(Check previous messages or server logs for details)." + RESET_TEXT_COLOR);
             }
         } catch (Exception e) {

@@ -1,4 +1,4 @@
-package server.WSHandlerFunctions;
+package server.wshandlerfunctions;
 
 import com.google.gson.Gson;
 import org.eclipse.jetty.websocket.api.Session;
@@ -55,15 +55,18 @@ public class HelperFunctions {
                 this.sendMessage(currentSession, message);
             } catch (IOException e) {
                 exceptions.add(e);
-                System.err.println("ERROR [HandleConnect - broadcastMessage]: IOException sending to session " + currentSession.hashCode() + ": " + e.getMessage());
+                System.err.println("ERROR [HandleConnect - broadcastMessage]: IOException sending to session "
+                        + currentSession.hashCode() + ": " + e.getMessage());
             } catch (Exception e) {
-                System.err.println("ERROR [HandleConnect - broadcastMessage]: Unexpected error sending to session " + currentSession.hashCode() + ": " + e.getMessage());
+                System.err.println("ERROR [HandleConnect - broadcastMessage]: Unexpected error sending to session "
+                        + currentSession.hashCode() + ": " + e.getMessage());
                 e.printStackTrace(System.err);
                 exceptions.add(new IOException("Unexpected send error", e));
             }
         }
         if (!exceptions.isEmpty()) {
-            System.err.println("ERROR [HandleConnect - broadcastMessage]: Encountered " + exceptions.size() + " IOExceptions during broadcast to game " + gameID);
+            System.err.println("ERROR [HandleConnect - broadcastMessage]: Encountered " + exceptions.size() +
+                    " IOExceptions during broadcast to game " + gameID);
         }
     }
 

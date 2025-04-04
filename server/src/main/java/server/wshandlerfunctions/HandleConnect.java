@@ -1,4 +1,4 @@
-package server.WSHandlerFunctions;
+package server.wshandlerfunctions;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
@@ -22,7 +22,11 @@ public class HandleConnect {
     private final HelperFunctions helperFunctions;
     private final Gson gson = new Gson();
 
-    public HandleConnect(GameService gameService, AuthDAO authDAO, GameDAO gameDAO, ConnectionManager connectionManager, HelperFunctions helperFunctions) {
+    public HandleConnect(GameService gameService,
+                         AuthDAO authDAO,
+                         GameDAO gameDAO,
+                         ConnectionManager connectionManager,
+                         HelperFunctions helperFunctions) {
         this.gameService = gameService;
         this.authDAO = authDAO;
         this.gameDAO = gameDAO;

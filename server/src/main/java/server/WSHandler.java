@@ -5,9 +5,7 @@ import com.google.gson.JsonSyntaxException;
 import dataaccess.*;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import server.WSHandlerFunctions.*;
+import server.wshandlerfunctions.*;
 import service.GameService;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
@@ -17,8 +15,7 @@ import java.io.IOException;
 
 @WebSocket
 public class WSHandler {
-    private static final Gson gson = new Gson();
-    private static final Logger log = LoggerFactory.getLogger(WSHandler.class);
+    private static final Gson GSON = new Gson();
     private static GameService gameService;
     private static AuthDAO authDAO = new SqlAuthDAO();
     private static GameDAO gameDAO = new SqlGameDAO();
@@ -90,7 +87,7 @@ public class WSHandler {
             }
             UserGameCommand baseCommand;
             try {
-                baseCommand = gson.fromJson(message, UserGameCommand.class);
+                baseCommand = GSON.fromJson(message, UserGameCommand.class);
                 if (baseCommand.getCommandType() == null) {
                     helperFunctions.sendError(session, "Error: Missing or invalid commandType field in message.");
                     return;
@@ -106,7 +103,7 @@ public class WSHandler {
                 case MAKE_MOVE:
                     try {
                         // Deserialize the SAME message string, but now into the specific subclass
-                        MakeMoveCommand makeMoveCommand = gson.fromJson(message, MakeMoveCommand.class);
+                        MakeMoveCommand makeMoveCommand = GSON.fromJson(message, MakeMoveCommand.class);
                         // Basic check if move field deserialized correctly (might be null if JSON was wrong)
                         if (makeMoveCommand.getMove() == null) {
                             helperFunctions.sendError(session, "Error: Missing or invalid 'move' field for MAKE_MOVE command.");
@@ -193,7 +190,7 @@ public class WSHandler {
         try {
             if (session != null && session.isOpen()) {
                 ErrorMessage error = new ErrorMessage(message);
-                session.getRemote().sendString(gson.toJson(error));
+                session.getRemote().sendString(GSON.toJson(error));
             }
         } catch (IOException e) {
             System.err.println("ERROR [WSHandler - sendErrorLocal]: Failed to send error: " + e.getMessage());

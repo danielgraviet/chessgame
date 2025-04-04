@@ -1,5 +1,4 @@
 package websocket.messages;
-// TODO start implementing the notifications to pass the 2nd test.
 public class NotificationMessage extends ServerMessage {
     private String message;
 

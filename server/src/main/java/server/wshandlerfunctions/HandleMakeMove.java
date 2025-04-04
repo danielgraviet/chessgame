@@ -1,4 +1,4 @@
-package server.WSHandlerFunctions;
+package server.wshandlerfunctions;
 
 import chess.ChessGame;
 import chess.ChessMove;
@@ -24,7 +24,9 @@ public class HandleMakeMove {
     private final HelperFunctions helperFunctions;
     private final Gson gson = new Gson();
 
-    public HandleMakeMove(GameService gameService, AuthDAO authDAO, GameDAO gameDAO, ConnectionManager connectionManager, HelperFunctions helperFunctions) {
+    public HandleMakeMove(GameService gameService, AuthDAO authDAO,
+                          GameDAO gameDAO, ConnectionManager connectionManager,
+                          HelperFunctions helperFunctions) {
         this.gameService = gameService;
         this.authDAO = authDAO;
         this.gameDAO = gameDAO;

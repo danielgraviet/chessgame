@@ -1,7 +1,7 @@
 package server;
 
 import dataaccess.*;
-import server.WSHandlerFunctions.*;
+import server.wshandlerfunctions.*;
 import service.GameService;
 import spark.*;
 import service.UserService;
@@ -40,10 +40,6 @@ public class Server {
         } catch (DataAccessException e) {
             throw new RuntimeException("Failed to create database: " + e.getMessage());
         }
-
-        //this.userDAO = new MemoryUserDAO();
-        //this.authDAO = new MemoryAuthDAO();
-        //this.gameDAO = new MemoryGameDAO();
 
         // this implements the sql database
         this.userDAO = new SqlUserDAO();

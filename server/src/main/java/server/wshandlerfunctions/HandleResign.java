@@ -1,4 +1,4 @@
-package server.WSHandlerFunctions;
+package server.wshandlerfunctions;
 
 import com.google.gson.Gson;
 import dataaccess.*;
@@ -21,7 +21,11 @@ public class HandleResign {
     private final HelperFunctions helperFunctions;
     private final Gson gson = new Gson();
 
-    public HandleResign(GameService gameService, AuthDAO authDAO, GameDAO gameDAO, ConnectionManager connectionManager, HelperFunctions helperFunctions) {
+    public HandleResign(GameService gameService,
+                        AuthDAO authDAO,
+                        GameDAO gameDAO,
+                        ConnectionManager connectionManager,
+                        HelperFunctions helperFunctions) {
         this.gameService = gameService;
         this.authDAO = authDAO;
         this.gameDAO = gameDAO;
@@ -89,9 +93,11 @@ public class HandleResign {
                     e.getMessage());
             e.printStackTrace(System.err);
             try {
-                this.helperFunctions.sendError(session, "An unexpected server error occurred while processing your resignation.");
+                this.helperFunctions.sendError(session,
+                        "An unexpected server error occurred while processing your resignation.");
             } catch (IOException sendEx) {
-                System.err.println("ERROR [HandleResign]: Failed to send error message back to client after unexpected error: " + sendEx.getMessage());
+                System.err.println("ERROR [HandleResign]: Failed to send error message back to client after unexpected error: "
+                        + sendEx.getMessage());
             }
         }
     }

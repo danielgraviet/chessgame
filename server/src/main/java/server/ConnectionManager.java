@@ -12,7 +12,8 @@ public class ConnectionManager {
         gameConnections.put(authToken, session);
 
         String shortToken = authToken != null && authToken.length() > 8 ? authToken.substring(0, 8) + "..." : authToken;
-        System.out.println("DEBUG [ConnectionManager]: Added connection for token " + shortToken + " to game " + gameId + " (Session: " + session.hashCode() + ")");
+        System.out.println("DEBUG [ConnectionManager]: Added connection for token " +
+                shortToken + " to game " + gameId + " (Session: " + session.hashCode() + ")");
     }
 
     public void removeConnection(int gameId, String authToken) {
@@ -21,16 +22,19 @@ public class ConnectionManager {
         if (gameConnections != null) {
             Session removedSession = gameConnections.remove(authToken);
             if (removedSession != null) {
-                System.out.println("DEBUG [ConnectionManager]: Removed connection for token " + shortToken + " from game " + gameId + " (Session: " + removedSession.hashCode() + ")");
+                System.out.println("DEBUG [ConnectionManager]: Removed connection for token " +
+                        shortToken + " from game " + gameId + " (Session: " + removedSession.hashCode() + ")");
                 if (gameConnections.isEmpty()) {
                     connections.remove(gameId);
                     System.out.println("DEBUG [ConnectionManager]: Game " + gameId + " connection map removed (empty).");
                 }
             } else {
-                System.out.println("DEBUG [ConnectionManager]: Attempted to remove token " + shortToken + " from game " + gameId + ", but it was not found.");
+                System.out.println("DEBUG [ConnectionManager]: Attempted to remove token " +
+                        shortToken + " from game " + gameId + ", but it was not found.");
             }
         } else {
-            System.out.println("DEBUG [ConnectionManager]: Attempted to remove connection from game " + gameId + " (token: " + shortToken + "), but the game has no connections registered.");
+            System.out.println("DEBUG [ConnectionManager]: Attempted to remove connection from game " +
+                    gameId + " (token: " + shortToken + "), but the game has no connections registered.");
         }
     }
 
@@ -55,16 +59,20 @@ public class ConnectionManager {
                 String shortToken = tokenToRemove.length() > 8 ? tokenToRemove.substring(0, 8) + "..." : tokenToRemove;
                 if (gameConnections.remove(tokenToRemove) != null) {
                     removed = true;
-                    System.out.println("DEBUG [ConnectionManager]: Removed session " + session.hashCode() + " (token: " + shortToken + ") from game " + gameId);
+                    System.out.println("DEBUG [ConnectionManager]: Removed session " +
+                            session.hashCode() + " (token: " + shortToken + ") from game " + gameId);
                     if (gameConnections.isEmpty()) {
                         connections.remove(gameId);
-                        System.out.println("DEBUG [ConnectionManager]: Game " + gameId + " connection map removed (empty due to session removal).");
+                        System.out.println("DEBUG [ConnectionManager]: Game " +
+                                gameId + " connection map removed (empty due to session removal).");
                     }
                 }
             }
         }
         if (!removed) {
-            System.out.println("DEBUG [ConnectionManager]: Session " + session.hashCode() + " was not found in any active game connections upon removal request.");
+            System.out.println("DEBUG [ConnectionManager]: Session " +
+                    session.hashCode() +
+                    " was not found in any active game connections upon removal request.");
         }
     }
 
