@@ -60,6 +60,7 @@ public class HandleLeave {
             GameData gameData = gameDAO.getGameByID(gameID);
             if (gameData == null) {
                 this.helperFunctions.sendError(session, "Error: Game ID " + gameID + "does not exist.");
+                return;
             }
 
             // update the game. crucial part
@@ -75,7 +76,7 @@ public class HandleLeave {
             String notificationJson = gson.toJson(notification);
 
             // Use the updated broadcastMessage, excluding the leaver by authToken
-            this.helperFunctions.broadcastMessage(notificationJson, gameID, authToken);
+            this.helperFunctions.broadcastMessage(notificationJson, gameID, null);
             System.out.println("INFO [WSHandler - handleLeave]: Broadcasted leave notification to others in game " +
                     gameID);
 

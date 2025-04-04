@@ -51,9 +51,17 @@ public class HandleMakeMove {
                 this.helperFunctions.sendError(session, "Error: Invalid or expired authentication token.");
                 return;
             }
+            username = authData.username();
+            if (username == null) {
+                System.err.println("CRITICAL: AuthData found for token " + authToken + " but username is null!");
+                this.helperFunctions.sendError(session, "Internal server error: User data corrupted.");
+                return;
+            }
+            System.out.println("username: " + username);
             gameData = gameDAO.getGameByID(gameID);
             if (gameData == null) {
                 this.helperFunctions.sendError(session, "Error: Game ID " + gameID + " does not exist.");
+                return;
             }
 
             game = gameService.getGame(gameID);
