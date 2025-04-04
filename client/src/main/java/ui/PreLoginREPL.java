@@ -58,7 +58,6 @@ public class PreLoginREPL {
                         out.println("User successfully logged in.");
                         loggedIn = true;
                     } else {
-                        // Facade should print specific errors (like wrong password)
                         out.println("Login failed.");
                     }
                     break;
@@ -69,7 +68,6 @@ public class PreLoginREPL {
 
                 case "help":
                     printMenu();
-                    // --- *** IMPORTANT: Added break *** ---
                     break;
 
                 default:

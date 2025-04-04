@@ -92,7 +92,9 @@ public class HandleLeave {
             try {
                 // Try to inform the user if the session is still open
                 this.helperFunctions.sendError(session, "An unexpected server error occurred while processing your leave request.");
-            } catch (IOException ioex) { /* If sending error fails, nothing more to do */ }
+            } catch (IOException ioex) {
+                // nothing more to do at this point
+            }
         }
     }
 }

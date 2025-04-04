@@ -9,7 +9,10 @@ import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Collection;
+import java.util.Set;
 
 import static ui.EscapeSequences.*;
 
@@ -75,6 +78,9 @@ public class GameplayREPL implements GameHandlerUI{
                         sendLeaveCommand();
                         inGame = false; // exit loop
                         break;
+                    case "highlight":
+                        handleHighlightCommand(args);
+                        break;
                     case "move":
                         handleMoveCommand(args);
                         break;
@@ -138,8 +144,69 @@ public class GameplayREPL implements GameHandlerUI{
         }
     }
 
+    private void handleHighlightCommand(String[] args) {
+        if (currentGame == null) {
+            displayError("Game state not loaded yet. Cannot highlight moves.");
+            return;
+        }
+
+        if (args.length != 2) {
+            displayError("Invalid command format. Use: highlight <position>");
+            displayError("Example: highlight e2");
+            return;
+        }
+
+        ChessPosition selectedPosition = parsePosition(args[1]);
+        if (selectedPosition == null) {
+            return;
+        }
+
+        // get piece at that pos.
+        ChessPiece piece = currentGame.getBoard().getPiece(selectedPosition);
+        if (piece == null) {
+            displayError("No piece found at " + args[1] + ".");
+            return;
+        }
+
+        // only correct team can check highlighted moves
+        if (playerColor != null && playerColor != piece.getTeamColor()) {
+            displayError("You can only highlight your own pieces (" + args[1] + ").");
+            return;
+        }
+
+        // collection to store moves.
+        Collection<ChessMove> validMoves;
+
+        try {
+            // getting the moves
+            validMoves = currentGame.validMoves(selectedPosition);
+        } catch (Exception e) {
+            displayError("Error calculating moves for " + args[1] + ": " + e.getMessage());
+            return;
+        }
+
+        if (validMoves.isEmpty()) {
+            displayNotification("Piece at " + args[1] + " has no valid moves.");
+            RenderBoard.printBoard(currentGame, this.perspective, null);
+            return;
+        }
+
+        Set<ChessPosition> highlightPositions = new HashSet<>();
+        highlightPositions.add(selectedPosition); // add the selected piece
+        for (ChessMove move : validMoves) {
+            highlightPositions.add(move.getEndPosition());
+        }
+
+        // render the board w highlighted pieces.
+        System.out.println("\nHighlighting moves for piece at " + args[1] + ":"); // Info message
+        RenderBoard.printBoard(currentGame, this.perspective, highlightPositions);
+    }
+
     private void handleMoveCommand(String[] args) {
-        if (wsCommunicator == null) return;
+        if (wsCommunicator == null) {
+            return;
+        }
+
         if (playerColor == null) {
             displayError("Observers cannot make moves.");
             redrawPrompt();
@@ -246,6 +313,7 @@ public class GameplayREPL implements GameHandlerUI{
                   help                - Show this message
                   redraw              - Redraw the chessboard
                   leave               - Leave the game (returns to menu)
+                  highlight <pos>     - Highlight the possible moves for your piece (e.g, highlight e2)
                   move <start> <end> [promo] - Make a move (e.g., move e2 e4)
                                           Promotion example: move a7 a8 q
                   resign              - Forfeit the game (you stay connected)

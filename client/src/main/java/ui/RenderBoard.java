@@ -5,15 +5,23 @@ import chess.ChessPiece;
 import chess.ChessPosition;
 
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import static ui.EscapeSequences.*;
 
 public class RenderBoard {
-    public static void printBoard(ChessGame game, boolean whitePerspective) {
+    public static void printBoard(ChessGame game, boolean whitePerspective, Collection<ChessPosition> highlightedSquares) {
         // error checking
         if (game == null || game.getBoard() == null) {
             System.out.println(SET_TEXT_COLOR_RED + "Error: Cannot print null game or board." + RESET_TEXT_COLOR);
             return;
         }
+
+        // handle null input for highlights
+        Set<ChessPosition> highlights = (highlightedSquares == null) ? Collections.emptySet() : new HashSet<>(highlightedSquares);
 
         ChessBoard board = game.getBoard();
         StringBuilder builder = new StringBuilder();
@@ -43,13 +51,18 @@ public class RenderBoard {
 
             for (int visualCol = colStart; visualCol != colEnd; visualCol += colIncrement) {
                 int internalCol = visualCol;
+
+                ChessPosition currentPosition = new ChessPosition(internalRow, internalCol);
                 // way to alternate light squares and dark squares w modulo.
                 boolean isLightSquare = (internalRow + internalCol) % 2 != 0;
-                builder.append(isLightSquare ? SET_BG_COLOR_LIGHT_GREY : SET_BG_COLOR_DARK_GREY);
-
+                boolean shouldHighlight = highlights.contains(currentPosition);
+                if (shouldHighlight) {
+                    builder.append(SET_BG_COLOR_YELLOW); // set the highlight as yellow. could adjust for alternating colors.
+                } else {
+                    builder.append(isLightSquare ? SET_BG_COLOR_LIGHT_GREY : SET_BG_COLOR_DARK_GREY);
+                }
                 // extract the piece at that position
-                ChessPosition position = new ChessPosition(internalRow, internalCol);
-                ChessPiece piece = board.getPiece(position);
+                ChessPiece piece = board.getPiece(currentPosition);
 
                 builder.append(getColoredPieceSymbol(piece));
             }
@@ -62,6 +75,11 @@ public class RenderBoard {
         System.out.println(builder);
     }
 
+    // overload
+    public static void printBoard(ChessGame game,  boolean whitePerspective) {
+        printBoard(game, whitePerspective, null); // calls main method with no highlights.
+    }
+
     private static String getColoredPieceSymbol(ChessPiece piece) {
         if (piece == null) {
             return EMPTY;
@@ -70,24 +88,25 @@ public class RenderBoard {
         String pieceSymbol;
         String textColor;
 
-        switch (piece.getPieceType()) {
-            case PAWN:   pieceSymbol = WHITE_PAWN;   break;
-            case ROOK:   pieceSymbol = WHITE_ROOK;   break;
-            case KNIGHT: pieceSymbol = WHITE_KNIGHT; break;
-            case BISHOP: pieceSymbol = WHITE_BISHOP; break;
-            case QUEEN:  pieceSymbol = WHITE_QUEEN;  break;
-            case KING:   pieceSymbol = WHITE_KING;   break;
-            default:     pieceSymbol = "?";          break;
-        }
+        // enhanced switch based on IDE suggestions?
+        pieceSymbol = switch (piece.getPieceType()) {
+            case PAWN -> WHITE_PAWN;
+            case ROOK -> WHITE_ROOK;
+            case KNIGHT -> WHITE_KNIGHT;
+            case BISHOP -> WHITE_BISHOP;
+            case QUEEN -> WHITE_QUEEN;
+            case KING -> WHITE_KING;
+            default -> "?";
+        };
         if (piece.getTeamColor() == ChessGame.TeamColor.BLACK) {
-            switch (piece.getPieceType()) {
-                case PAWN:   pieceSymbol = BLACK_PAWN;   break;
-                case ROOK:   pieceSymbol = BLACK_ROOK;   break;
-                case KNIGHT: pieceSymbol = BLACK_KNIGHT; break;
-                case BISHOP: pieceSymbol = BLACK_BISHOP; break;
-                case QUEEN:  pieceSymbol = BLACK_QUEEN;  break;
-                case KING:   pieceSymbol = BLACK_KING;   break;
-            }
+            pieceSymbol = switch (piece.getPieceType()) {
+                case PAWN -> BLACK_PAWN;
+                case ROOK -> BLACK_ROOK;
+                case KNIGHT -> BLACK_KNIGHT;
+                case BISHOP -> BLACK_BISHOP;
+                case QUEEN -> BLACK_QUEEN;
+                case KING -> BLACK_KING;
+            };
         }
 
         textColor = (piece.getTeamColor() == ChessGame.TeamColor.WHITE) ? SET_TEXT_COLOR_WHITE : SET_TEXT_COLOR_BLACK;
