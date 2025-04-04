@@ -80,7 +80,7 @@ public class HandleMakeMove {
                 this.helperFunctions.sendError(session, "Error: Observers cannot make moves.");
                 return;
             }
-            if (game.getTeamTurn() != playerColor) {
+            if (game.getTeamTurn() != playerColor || game.isGameOver()) {
                 this.helperFunctions.sendError(session, "Error: It's not your turn (" + game.getTeamTurn() + "'s turn).");
                 return; // Stop processing
             }
@@ -140,5 +140,15 @@ public class HandleMakeMove {
             e.printStackTrace();
             this.helperFunctions.sendError(session, "An unexpected server error occurred while processing your move.");
         }
+    }
+
+    private boolean authDataValid(AuthData authData) {
+        if (authData == null) {
+            return false;
+        }
+        if (authData.username() == null || authData.username().isEmpty()) {
+            return false;
+        }
+        return true;
     }
 }

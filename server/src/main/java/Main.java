@@ -7,3 +7,7 @@ public class Main {
         server.run(8081);
     }
 }
+
+// confirm resign
+// leave message should send to all clients.
+// highlight moves

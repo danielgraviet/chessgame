@@ -172,12 +172,6 @@ public class GameplayREPL implements GameHandlerUI{
             return;
         }
 
-        // only correct team can check highlighted moves
-        if (playerColor != null && playerColor != piece.getTeamColor()) {
-            displayError("You can only highlight your own pieces (" + args[1] + ").");
-            return;
-        }
-
         // collection to store moves.
         Collection<ChessMove> validMoves;
 
