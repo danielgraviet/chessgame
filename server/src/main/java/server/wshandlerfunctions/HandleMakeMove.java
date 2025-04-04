@@ -35,21 +35,14 @@ public class HandleMakeMove {
     }
 
     public void handle(Session session, MakeMoveCommand command) throws IOException {
-        Integer gameID = command.getGameID();
-        String authToken = command.getAuthToken();
+        Integer gameID = command.getGameID(); String authToken = command.getAuthToken();
 
         if (this.helperFunctions.invalidTokenAndID(gameID, authToken, session)) {
             return;
         };
 
         ChessMove move = command.getMove();
-
-        ChessGame game = null;
-        GameData gameData = null;
-        String username = null;
-        AuthData authData = null;
-
-
+        ChessGame game = null; GameData gameData = null; String username = null; AuthData authData = null;
         if (gameID == null || authToken == null || authToken.isBlank() || move == null) {
             this.helperFunctions.sendError(session, "Error: Missing required fields (gameID, authToken, move) for MAKE_MOVE.");
             return;
@@ -92,12 +85,10 @@ public class HandleMakeMove {
                 this.helperFunctions.sendError(session, "Error: Observers cannot make moves.");
                 return;
             }
-
             if (game.getTeamTurn() != playerColor) {
                 this.helperFunctions.sendError(session, "Error: It's not your turn (" + game.getTeamTurn() + "'s turn).");
                 return; // Stop processing
             }
-
             if (game.getTeamTurn() == null || game.isGameOver()) {
                 this.helperFunctions.sendError(session, "Error: The game is already over.");
                 return;
@@ -108,22 +99,17 @@ public class HandleMakeMove {
             System.out.println("Move validated and executed successfully for game " + gameID);
 
             // assume it has been successful, so now we broadcast the updates.
-
             GameData updatedGameData = gameDAO.getGameByID(gameID);
             if (updatedGameData == null || updatedGameData.game() == null) {
                 System.err.println("CRITICAL: Failed to retrieve updated GameData or game state after move for game " + gameID);
                 this.helperFunctions.sendError(session, "Internal server error after making move (failed to load update).");
-                // Maybe try broadcasting the OLD state? Or just stop. For now, stop.
                 return;
             }
-
             LoadGameMessage loadGameMessage = new LoadGameMessage(updatedGameData);
             String loadGameJson = gson.toJson(loadGameMessage);
             this.helperFunctions.broadcastMessage(loadGameJson, gameID, null);
             System.out.println("Broadcast LOAD_GAME (after move) to all in game " + gameID);
-
             ChessGame updatedGameLogic = updatedGameData.game();
-
             String moveDescription = String.format("'%s' (%s) moved %s from %s to %s%s.",
                     username,
                     playerColor,
@@ -131,17 +117,13 @@ public class HandleMakeMove {
                     move.getStartPosition().toString(),
                     move.getEndPosition().toString(),
                     move.getPromotionPiece() != null ? " promoting to " + move.getPromotionPiece() : "");
-
             NotificationMessage moveNotification = new NotificationMessage(moveDescription);
             String moveNotificationJson = gson.toJson(moveNotification);
             this.helperFunctions.broadcastMessage(moveNotificationJson, gameID, authToken);
             System.out.println("Broadcast MOVE NOTIFICATION to others in game " + gameID);
-
-
             ChessGame.TeamColor opponentColor = (playerColor == ChessGame.TeamColor.WHITE) ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
             String opponentUsername = (playerColor == ChessGame.TeamColor.WHITE) ? gameData.blackUsername() : gameData.whiteUsername();
             opponentUsername = (opponentUsername == null) ? "[Opponent]" : "'" + opponentUsername + "'";
-
             String stateNotificationText = null;
             if (updatedGameLogic.isInCheckmate(opponentColor)) {
                 stateNotificationText = String.format("CHECKMATE! %s (%s) defeated %s (%s).", username, playerColor, opponentUsername, opponentColor);
@@ -150,34 +132,22 @@ public class HandleMakeMove {
             } else if (updatedGameLogic.isInCheck(opponentColor)) {
                 stateNotificationText = String.format("CHECK! %s (%s) is in check.", opponentUsername, opponentColor);
             }
-
             if (stateNotificationText != null) {
                 NotificationMessage stateNotification = new NotificationMessage(stateNotificationText);
                 String stateNotificationJson = gson.toJson(stateNotification);
                 this.helperFunctions.broadcastMessage(stateNotificationJson, gameID, null);
                 System.out.println("Broadcast GAME STATE NOTIFICATION to all in game " + gameID + ": " + stateNotificationText);
             }
-
         } catch (InvalidMoveException e) {
-
             System.out.println("Invalid move attempted by " + username + " in game " + gameID + ": " + e.getMessage());
             this.helperFunctions.sendError(session, "Error: Invalid move - " + e.getMessage());
-
-
         } catch (DataAccessException e) {
-
             System.err.println("Data access error processing move for game " + gameID + ", user '" + username + "': " + e.getMessage());
             e.printStackTrace();
             this.helperFunctions.sendError(session, "Error processing move: A database error occurred. " + e.getMessage());
-
-
         } catch (IOException e) {
-
             System.err.println("IO error during make move processing/broadcast for game " + gameID + ": " + e.getMessage());
-
-
         } catch (Exception e) {
-
             System.err.println("Unexpected error processing move for game " + gameID + ", user '" + username + "': " + e.getMessage());
             e.printStackTrace();
             this.helperFunctions.sendError(session, "An unexpected server error occurred while processing your move.");

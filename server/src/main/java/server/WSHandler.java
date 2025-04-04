@@ -66,7 +66,8 @@ public class WSHandler {
             System.err.println("onConnect: Session is null");
             return;
         }
-        System.out.println("INFO [WSHandler - onConnect]: WebSocket connection opened. Session ID: " + session.hashCode() + ", Remote: " + session.getRemoteAddress());
+        System.out.println("INFO [WSHandler - onConnect]: WebSocket connection opened. Session ID: " +
+                session.hashCode() + ", Remote: " + session.getRemoteAddress());
     }
 
     @OnWebSocketMessage
