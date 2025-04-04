@@ -30,6 +30,8 @@ public class GameplayREPL implements GameHandlerUI{
     private final Gson gson = new Gson();
     private final boolean perspective;
 
+    private boolean awaitingResignConfirmation = false;
+
     public GameplayREPL(ServerFacade facade,
                         String domain,
                         int gameID,
@@ -66,34 +68,46 @@ public class GameplayREPL implements GameHandlerUI{
                     continue;
                 }
 
+                if (awaitingResignConfirmation) {
+                    if (command.equals("resign")) {
+                        awaitingResignConfirmation = false;
+                        // send resign command.
+                    } else {
+                        awaitingResignConfirmation = false;
+                        displayNotification("Resign cancelled");
+                    }
+                }
 
-                switch (command) {
-                    case "help":
-                        printHelp();
-                        break;
-                    case "redraw":
-                        redrawBoard();
-                        break;
-                    case "leave":
-                        sendLeaveCommand();
-                        inGame = false; // exit loop
-                        break;
-                    case "highlight":
-                        handleHighlightCommand(args);
-                        break;
-                    case "move":
-                        handleMoveCommand(args);
-                        break;
-                    case "resign":
-                        sendResignCommand();
-                        break;
-                    default:
-                        displayError("Unknown command. Type 'help' for options.");
-                        redrawPrompt();
-                        break;
+
+                if (!awaitingResignConfirmation) {
+                    switch (command) {
+                        case "help":
+                            printHelp();
+                            break;
+                        case "redraw":
+                            redrawBoard();
+                            redrawPrompt();
+                            break;
+                        case "leave":
+                            sendLeaveCommand();
+                            inGame = false; // exit loop
+                            break;
+                        case "highlight":
+                            handleHighlightCommand(args);
+                            break;
+                        case "move":
+                            handleMoveCommand(args);
+                            break;
+                        case "resign":
+                            sendResignCommand();
+                            break;
+                        default:
+                            displayError("Unknown command. Type 'help' for options.");
+                            redrawPrompt();
+                            break;
+                    }
                 }
             }
-
         } catch (Exception e) {
             System.out.println(SET_TEXT_COLOR_RED + "FATAL ERROR: Could not start gameplay. " + e.getMessage() + RESET_TEXT_COLOR);
             e.printStackTrace();

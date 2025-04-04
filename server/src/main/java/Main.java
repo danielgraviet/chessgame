@@ -10,4 +10,4 @@ public class Main {
 
 // confirm resign
 // leave message should send to all clients.
-// highlight moves
+// highlight moves DONE
