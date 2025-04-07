@@ -48,42 +48,32 @@ public class HttpCommunicator implements ServerCommunicator {
 
     public boolean register(String username, String password, String email) {
         // think of this as a python dictionary.
-        System.out.println("DEBUG COMM [REGISTER] Called with: user=" + username); // Debug start
         Map<String, String> body = Map.of("username", username, "password", password, "email", email);
         Map<String, Object> response = sendRequest("POST", "/user", body);
-        System.out.println("DEBUG COMM [REGISTER] Raw response received: " + response);
         return handleAuthResponse(response);
     }
 
 
     public boolean login(String username, String password) {
-        System.out.println("DEBUG COMM [LOGIN] Called with: user=" + username);
         Map<String, String> body = Map.of("username", username, "password", password);
         Map<String, Object> response = sendRequest("POST", "/session", body);
-        System.out.println("DEBUG COMM [LOGIN] Raw response received: " + response);
         return handleAuthResponse(response);
     }
 
     public boolean logout(){
-        System.out.println("DEBUG COMM [LOGOUT] Called"); // Debug start
         // this should log out the user, and remove the auth token
         Map<String, Object> response = sendRequest("DELETE", "/session", null);
-        System.out.println("DEBUG COMM [LOGOUT] Raw response received: " + response);
         return handleAuthResponse(response);
     }
 
     public void reset() {
-        System.out.println("DEBUG COMM [RESET] Called"); // Debug start
         Map<String, Object> response = sendRequest("DELETE", "/db", null);
         if (response.containsKey("error")) {
-            System.err.println("ERROR COMM [RESET] Failed: " + response.get("error"));
             throw new RuntimeException("Failed te reset server: " + response);
         }
-        System.out.println("System Reset: " + response);
     }
 
     public int createGame(String gameName) {
-        System.out.println("DEBUG COMM [CREATE_GAME] Called with: name=" + gameName); // Debug start
         Map<String, Object> response = sendRequest("POST", "/game", Map.of("gameName", gameName));
 
         // simple error checking
@@ -172,7 +162,6 @@ public class HttpCommunicator implements ServerCommunicator {
 
     public boolean joinGame(int gameID, String playerColor) {
         //Spark.put("/game", gameServer::joinGame);
-        System.out.println("DEBUG COMM [JOIN_GAME] Called with: gameID=" + gameID + ", color=" + playerColor);
         Map<String, Object> body = Map.of("gameID", gameID, "playerColor", playerColor);
         Map<String, Object> response = sendRequest("PUT", "/game", body);
         // signify if it worked.
@@ -180,17 +169,11 @@ public class HttpCommunicator implements ServerCommunicator {
     }
     // private methods
     private Map<String, Object> sendRequest(String method, String endpoint, Map<String, ?> body) {
-        System.out.println("---"); // Separator for clarity
-        System.out.println("DEBUG COMM [SEND] >> Method: " + method);
-        System.out.println("DEBUG COMM [SEND] >> Endpoint: " + endpoint);
-        System.out.println("DEBUG COMM [SEND] >> Body: " + (body == null ? "null" : GSON.toJson(body)));
-        System.out.println("DEBUG COMM [SEND] >> Auth Token Used: " + facade.getAuthToken());
         HttpURLConnection connection = null;
         Map<String, Object> responseMap = null;
         try {
             connection = setupConnection(method, endpoint, body);
             int status = connection.getResponseCode(); // Execute the request
-            System.out.println("DEBUG COMM [RECV] << Status: " + status); // Log the actual status code
 
             InputStream responseStream = null;
             // Check if the status code indicates success (usually 2xx)

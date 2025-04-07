@@ -17,15 +17,15 @@ import java.util.Set;
 import static ui.EscapeSequences.*;
 
 public class GameplayREPL implements GameHandlerUI{
-    private final ServerFacade serverFacade; // To get authToken
+    private final ServerFacade serverFacade;
     private final String serverDomain;
     private final int gameID;
-    private final ChessGame.TeamColor playerColor; // WHITE, BLACK, or null for observer
+    private final ChessGame.TeamColor playerColor;
     private final String authToken;
-    private final PostLoginREPL postLoginREPL; // To return control
+    private final PostLoginREPL postLoginREPL;
 
     private WebSocketCommunicator wsCommunicator;
-    private ChessGame currentGame; // Holds the latest game state received from server
+    private ChessGame currentGame;
     private final Scanner scanner = new Scanner(System.in);
     private final Gson gson = new Gson();
     private final boolean perspective;
@@ -42,21 +42,17 @@ public class GameplayREPL implements GameHandlerUI{
         this.serverFacade = facade;
         this.serverDomain = domain;
         this.gameID = gameID;
-        this.playerColor = playerColor; // can be null if observing
+        this.playerColor = playerColor;
         this.authToken = authToken;
         this.postLoginREPL = postLoginREPL;
-        this.currentGame = initialGame; // use initial game state if provided
+        this.currentGame = initialGame;
         this.perspective = (playerColor != ChessGame.TeamColor.BLACK);
     }
 
     public void run() {
         try {
             wsCommunicator = new WebSocketCommunicator(serverDomain, this);
-            System.out.println("DEBUG: WebSocket connection established.");
-
             sendConnectCommand();
-            System.out.println("DEBUG: Sent CONNECT command.");
-
             boolean inGame = true;
             while (inGame) {
                 String line = scanner.nextLine().trim();
@@ -149,11 +145,11 @@ public class GameplayREPL implements GameHandlerUI{
             redrawPrompt();
             return;
         }
-        if (currentGame != null && currentGame.isGameOver()) {
-            displayError("Game is already over, cannot resign.");
-            redrawPrompt();
-            return;
-        }
+//        if (currentGame != null && currentGame.isGameOver()) {
+//            displayError("Game is already over, cannot resign.");
+//            redrawPrompt();
+//            return;
+//        }
 
         // set flag
         awaitingResignConfirmation = true;
@@ -167,7 +163,7 @@ public class GameplayREPL implements GameHandlerUI{
             displayError("Not connected, cannot send RESIGN command.");
             return;
         }
-        // Redundant check, should be caught by handleResignConfirmationRequest, but safe to keep
+
         if (playerColor == null) {
             displayError("Observers cannot resign.");
             return;
@@ -268,7 +264,6 @@ public class GameplayREPL implements GameHandlerUI{
             redrawPrompt();
             return;
         }
-
 
         if (args.length < 3) {
             displayError("Invalid move format. Use: move <startPos> <endPos> [promotionPiece]");

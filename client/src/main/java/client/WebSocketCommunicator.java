@@ -63,10 +63,8 @@ public class WebSocketCommunicator extends Endpoint {
     }
 
     private void handleMessage(String message) {
-        System.out.println("DEBUG WS [RECV] << Raw: " + message);
         try {
             ServerMessage baseMessage = gson.fromJson(message, ServerMessage.class);
-            System.out.println("DEBUG WS [RECV] << Type: " + baseMessage.getServerMessageType());
 
             switch (baseMessage.getServerMessageType()) {
                 case NOTIFICATION:
@@ -88,7 +86,6 @@ public class WebSocketCommunicator extends Endpoint {
                         ChessPosition checkPos = new ChessPosition(3, 5); // test
                         ChessPiece pieceAtCheckPos = chessGame.getBoard().getPiece(checkPos);
                         String pieceStr = (pieceAtCheckPos != null) ? pieceAtCheckPos.toString() : "null";
-                        System.out.println("DEBUG WS [RECV] << Parsed LOAD_GAME. Piece at " + checkPos + ": " + pieceStr);
 
                         uiHandler.updateBoard(chessGame);
                     } else {
@@ -126,9 +123,9 @@ public class WebSocketCommunicator extends Endpoint {
     public void close() {
         if (this.session != null && this.session.isOpen()) {
             try {
-                this.session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE,
-                        "Client logging out or closing game"));
-            } catch (IOException e) {
+                //this.session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE,
+                //       "Client logging out or closing game"));
+            } catch (RuntimeException e) {
                 System.err.println("Error closing WebSocket session: " + e.getMessage());
             } finally {
                 this.session = null;

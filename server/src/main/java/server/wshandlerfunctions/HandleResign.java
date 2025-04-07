@@ -42,7 +42,6 @@ public class HandleResign {
             return;
         }
 
-
         try {
             AuthData authData = authDAO.getUser(authToken);
             if (authData == null) {

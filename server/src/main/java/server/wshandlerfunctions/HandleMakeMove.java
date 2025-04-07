@@ -76,7 +76,7 @@ public class HandleMakeMove {
                 return;
             }
             if (game.getTeamTurn() != playerColor || game.isGameOver()) {
-                this.helperFunctions.sendError(session, "Error: It's not your turn (" + game.getTeamTurn() + "'s turn).");
+                this.helperFunctions.sendError(session, "Error: It's not your turn.");
                 return; // Stop processing
             }
             if (game.getTeamTurn() == null || game.isGameOver()) {

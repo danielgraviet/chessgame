@@ -8,6 +8,8 @@ public class Main {
     }
 }
 
-// confirm resign
-// leave message should send to all clients.
-// highlight moves DONE
+// double leave, people in game need leave message
+
+// leave should take out of in game loop, and send to out of game loop. and send message to other client that they have left the game.
+// mis mathc with resign and game loop.
+

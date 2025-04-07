@@ -28,7 +28,7 @@ public class RenderBoard {
 
         // top and bottom column headings
         String columnsWhite = "   a  b  c  d  e  f  g  h   \n";
-        String columnsBlack = "   h  g  f  e  d  b  c  a   \n";
+        String columnsBlack = "   h  g  f  e  d  c  b  a   \n";
         String columns = whitePerspective ? columnsWhite : columnsBlack;
 
         // top columns

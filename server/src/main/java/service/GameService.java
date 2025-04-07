@@ -220,12 +220,12 @@ public class GameService {
 
         ChessGame game = currentGameData.game();
         // Check if game is over AFTER confirming game exists
-        if (game != null && game.isGameOver()) {
-            System.err.println("ERROR [GameService - leaveGame]: User '" + username +
-                    "' attempted to leave game " + gameID + ", but the game is already over.");
-            throw new InvalidMoveException("Cannot leave game; the game is already over.");
-            // Consider if InvalidMoveException is the right type here, maybe IllegalStateException? But sticking to your current signature.
-        }
+//        if (game != null && game.isGameOver()) {
+//            System.err.println("ERROR [GameService - leaveGame]: User '" + username +
+//                    "' attempted to leave game " + gameID + ", but the game is already over.");
+//            throw new InvalidMoveException("Cannot leave game; the game is already over.");
+//            // Consider if InvalidMoveException is the right type here, maybe IllegalStateException? But sticking to your current signature.
+//        }
 
         String whitePlayerName = currentGameData.whiteUsername();
         String blackPlayerName = currentGameData.blackUsername();
