@@ -37,14 +37,12 @@ public class HandleMakeMove {
     public void handle(Session session, MakeMoveCommand command) throws IOException {
         Integer gameID = command.getGameID(); String authToken = command.getAuthToken();
         if (this.helperFunctions.invalidTokenAndID(gameID, authToken, session)) {
-            return;
-        };
+            return;};
         ChessMove move = command.getMove();
         ChessGame game = null; GameData gameData = null; String username = null; AuthData authData = null;
         if (gameID == null || authToken == null || authToken.isBlank() || move == null) {
             this.helperFunctions.sendError(session, "Error: Missing required fields (gameID, authToken, move) for MAKE_MOVE.");
-            return;
-        }
+            return;}
         try {
             authData = authDAO.getUser(authToken);
             if (authData == null) {
@@ -57,19 +55,16 @@ public class HandleMakeMove {
                 this.helperFunctions.sendError(session, "Internal server error: User data corrupted.");
                 return;
             }
-            System.out.println("username: " + username);
             gameData = gameDAO.getGameByID(gameID);
             if (gameData == null) {
                 this.helperFunctions.sendError(session, "Error: Game ID " + gameID + " does not exist.");
                 return;
             }
-
             game = gameService.getGame(gameID);
             if (game == null) {
                 System.err.println("CRITICAL: GameData found but GameService failed to load game " + gameID);
                 this.helperFunctions.sendError(session, "Error: Could not load game logic/state for game ID " + gameID + ".");
-                return;
-            }
+                return;}
             ChessGame.TeamColor playerColor = null;
             if (username.equals(gameData.whiteUsername())) {
                 playerColor = ChessGame.TeamColor.WHITE;
@@ -94,8 +89,7 @@ public class HandleMakeMove {
             if (updatedGameData == null || updatedGameData.game() == null) {
                 System.err.println("CRITICAL: Failed to retrieve updated GameData or game state after move for game " + gameID);
                 this.helperFunctions.sendError(session, "Internal server error after making move (failed to load update).");
-                return;
-            }
+                return;}
             LoadGameMessage loadGameMessage = new LoadGameMessage(updatedGameData);
             String loadGameJson = gson.toJson(loadGameMessage);
             this.helperFunctions.broadcastMessage(loadGameJson, gameID, null);
@@ -139,6 +133,4 @@ public class HandleMakeMove {
             System.err.println("Unexpected error processing move for game " + gameID + ", user '" + username + "': " + e.getMessage());
             e.printStackTrace();
             this.helperFunctions.sendError(session, "An unexpected server error occurred while processing your move.");
-        }
-    }
-}
+        }}}
