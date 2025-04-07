@@ -37,7 +37,6 @@ public class HandleLeave {
 
     public void handle(Session session, UserGameCommand command) throws IOException {
         String logPrefix = "[DEBUG HandleLeave] ";
-
         // basic validation with invalidTokenAndId function
         int gameID = command.getGameID();
         String authToken = command.getAuthToken();
@@ -46,8 +45,7 @@ public class HandleLeave {
         if (this.helperFunctions.invalidTokenAndID(gameID, authToken, session)) {
             System.err.println(logPrefix + "Validation failed (invalidTokenAndID). Aborting for GameID: "
                     + gameID + ", AuthToken ending: ..." + authToken);
-            return;
-        }
+            return;}
         // use a try catch block for potential errors
         try {
             // use authToken to get authData. and retrieve the user name.
@@ -55,30 +53,16 @@ public class HandleLeave {
             if (authData == null) {
                 System.err.println(logPrefix + "Auth token invalid or expired (ending: ..." + authToken + "). Sending error.");
                 this.helperFunctions.sendError(session, "Error: invalid or expired auth.");
-                return;
-            }
-
+                return;}
             // store the username
             username = authData.username();
-            System.out.println(logPrefix + "Auth token valid. Username: " + username);
-
-            // fetch the game data
-            System.out.println(logPrefix + "Fetching GameData for gameID: " + gameID);
             GameData gameData = gameDAO.getGameByID(gameID);
             if (gameData == null) {
                 this.helperFunctions.sendError(session, "Error: Game ID " + gameID + "does not exist.");
-                return;
-            }
-            System.out.println(logPrefix + "GameData found for gameID: " + gameID);
-
-            System.out.println(logPrefix + "Attempting to remove connection for user '" + username + "', gameID: " + gameID);
+                return;}
             connectionManager.removeConnection(gameID, authToken);
-            System.out.println(logPrefix + "Connection removed (or confirmed not present) for user '" + username + "', gameID: " + gameID);
-
-            System.out.println(logPrefix + "Attempting to get ChessGame object from GameData.");
             ChessGame game = gameData.game();
             boolean isGameOver = false;
-
             // check if game exists
             if (game == null) {
                 System.err.println(logPrefix + "WARNING: ChessGame object in GameData is NULL for gameID: " +
@@ -89,7 +73,6 @@ public class HandleLeave {
                 isGameOver = game.isGameOver();
                 System.out.println(logPrefix + "Result of game.isGameOver() for gameID " + gameID + ": " + isGameOver);
             }
-
             // assume the game is active, bc resign does not affect it.
             if (!isGameOver) {
                 System.out.println(logPrefix + "Game is determined to be ACTIVE. Calling gameService.leaveGame for user '" +
@@ -108,7 +91,6 @@ public class HandleLeave {
             } else {
                 System.out.println(logPrefix + "Game is determined to be OVER. Skipping call to gameService.leaveGame.");
             }
-
             // moved broadcast message here, bc it should always send.
             String notificationText = String.format("'%s' has left the game.", username);
             NotificationMessage notification = new NotificationMessage(notificationText);
@@ -119,7 +101,6 @@ public class HandleLeave {
 
             System.out.println(logPrefix + "Successfully finished processing LEAVE request pathway for user '"
                     + username + "' and game " + gameID + ".");
-
         } catch (DataAccessException e) {
             System.err.println(logPrefix + "DataAccessException during initial fetch for game " + gameID
                     + ", user '" + (username != null ? username : "UNKNOWN using token ending ..."
