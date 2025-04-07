@@ -43,7 +43,6 @@ public class HandleLeave {
             return;
         }
 
-
         // use a try catch block for potential errors
         try {
             // use authToken to get authData. and retrieve the user name.
@@ -68,8 +67,6 @@ public class HandleLeave {
             System.out.println("INFO [WSHandler - handleLeave]: GameService successfully processed leave for user '" +
                     username + "', gameID: " + gameID);
 
-            connectionManager.removeConnection(gameID, authToken);
-
             // notify if successful
             String notificationText = String.format("'%s' has left the game.", username);
             NotificationMessage notification = new NotificationMessage(notificationText);
@@ -82,6 +79,8 @@ public class HandleLeave {
 
             System.out.println("SUCCESS [WSHandler - handleLeave]: User '" +
                     username + "' successfully left game " + gameID + ".");
+
+            connectionManager.removeConnection(gameID, authToken);
 
         } catch (InvalidMoveException e) { // Or IllegalStateException depending on your service
             System.err.println("WARN [WSHandler - handleLeave]: Invalid leave attempt by user '" +

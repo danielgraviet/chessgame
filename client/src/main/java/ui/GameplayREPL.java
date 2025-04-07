@@ -72,6 +72,7 @@ public class GameplayREPL implements GameHandlerUI{
                     if (command.equals("resign")) {
                         awaitingResignConfirmation = false;
                         // send resign command.
+                        sendResignCommandInternal();
                     } else {
                         awaitingResignConfirmation = false;
                         displayNotification("Resign cancelled");
@@ -99,7 +100,7 @@ public class GameplayREPL implements GameHandlerUI{
                             handleMoveCommand(args);
                             break;
                         case "resign":
-                            sendResignCommand();
+                            handleResignConfirmationRequest();
                             break;
                         default:
                             displayError("Unknown command. Type 'help' for options.");
@@ -159,6 +160,52 @@ public class GameplayREPL implements GameHandlerUI{
             // server will notify players about the resignation
         } catch (IOException e) {
             displayError("Failed to send RESIGN command: " + e.getMessage());
+        }
+    }
+
+    private void handleResignConfirmationRequest() {
+        if (playerColor == null) {
+            displayError("Observers cannot resign.");
+            redrawPrompt();
+            return;
+        }
+        if (currentGame != null && currentGame.isGameOver()) {
+            displayError("Game is already over, cannot resign.");
+            redrawPrompt();
+            return;
+        }
+
+        // set flag
+        awaitingResignConfirmation = true;
+        System.out.println(SET_TEXT_COLOR_YELLOW + "Are you sure you want to resign? " +
+                "Type 'resign' again to confirm, or any other command to cancel." + RESET_TEXT_COLOR);
+        redrawPrompt(); // show prompt again after asking
+    }
+
+    private void sendResignCommandInternal() {
+        if (wsCommunicator == null) {
+            displayError("Not connected, cannot send RESIGN command.");
+            return;
+        }
+        // Redundant check, should be caught by handleResignConfirmationRequest, but safe to keep
+        if (playerColor == null) {
+            displayError("Observers cannot resign.");
+            return;
+        }
+        if (currentGame != null && currentGame.isGameOver()) {
+            displayError("Game is already over.");
+            return;
+        }
+
+        try {
+            UserGameCommand resignCmd = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);
+            wsCommunicator.sendMessage(gson.toJson(resignCmd));
+            displayNotification("Resignation command sent."); // Give user feedback
+            // Server will notify all clients about the resignation result.
+        } catch (IOException e) {
+            displayError("Failed to send RESIGN command: " + e.getMessage());
+        } catch (Exception e) {
+            displayError("Error sending RESIGN command: " + e.getMessage());
         }
     }
 
