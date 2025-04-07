@@ -143,26 +143,6 @@ public class GameplayREPL implements GameHandlerUI{
             wsCommunicator.close();
         }
     }
-
-    private void sendResignCommand() {
-        if (wsCommunicator == null) {
-            return;
-        }
-        if (playerColor == null) {
-            displayError("Observers cannot resign.");
-            redrawPrompt();
-            return;
-        }
-
-        try {
-            UserGameCommand resignCmd = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);
-            wsCommunicator.sendMessage(gson.toJson(resignCmd));
-            // server will notify players about the resignation
-        } catch (IOException e) {
-            displayError("Failed to send RESIGN command: " + e.getMessage());
-        }
-    }
-
     private void handleResignConfirmationRequest() {
         if (playerColor == null) {
             displayError("Observers cannot resign.");

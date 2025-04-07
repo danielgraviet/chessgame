@@ -61,6 +61,7 @@ public class HandleLeave {
                 this.helperFunctions.sendError(session, "Error: Game ID " + gameID + "does not exist.");
                 return;
             }
+            connectionManager.removeConnection(gameID, authToken);
 
             // update the game. crucial part
             gameService.leaveGame(gameID, username);
@@ -79,9 +80,6 @@ public class HandleLeave {
 
             System.out.println("SUCCESS [WSHandler - handleLeave]: User '" +
                     username + "' successfully left game " + gameID + ".");
-
-            connectionManager.removeConnection(gameID, authToken);
-
         } catch (InvalidMoveException e) { // Or IllegalStateException depending on your service
             System.err.println("WARN [WSHandler - handleLeave]: Invalid leave attempt by user '" +
                     username + "' for game " + gameID + ": " + e.getMessage());

@@ -141,14 +141,4 @@ public class HandleMakeMove {
             this.helperFunctions.sendError(session, "An unexpected server error occurred while processing your move.");
         }
     }
-
-    private boolean authDataValid(AuthData authData) {
-        if (authData == null) {
-            return false;
-        }
-        if (authData.username() == null || authData.username().isEmpty()) {
-            return false;
-        }
-        return true;
-    }
 }

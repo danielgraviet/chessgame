@@ -255,10 +255,6 @@ public class HttpCommunicator implements ServerCommunicator {
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
         conn.setRequestMethod(method);
 
-        //String authToken = facade.getAuthToken();
-        //System.out.println("Auth token for " + method + " " + endpoint + " " + (authToken != null ? authToken : "null"));
-
-
         if (facade.getAuthToken() != null) {
             conn.setRequestProperty("Authorization", facade.getAuthToken());
         }
