@@ -145,12 +145,6 @@ public class GameplayREPL implements GameHandlerUI{
             redrawPrompt();
             return;
         }
-//        if (currentGame != null && currentGame.isGameOver()) {
-//            displayError("Game is already over, cannot resign.");
-//            redrawPrompt();
-//            return;
-//        }
-
         // set flag
         awaitingResignConfirmation = true;
         System.out.println(SET_TEXT_COLOR_YELLOW + "Are you sure you want to resign? " +
